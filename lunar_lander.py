@@ -24,6 +24,7 @@ if __name__ == '__main__':
     argparser.add_argument('--thresh', type=float, default=250, help="Average return over which we terminate training.")
     argparser.add_argument('--file_save', type=str, default='lunar_lander', help="File name of the saved weights.")
     argparser.add_argument('--n_test', type=int, default=10, help="Number of test episodes.")
+    argparser.add_argument('--save_gif', type=int, default=0, help="If 1, save gif of the tested agent, 0 otherwise.")
     
     args = argparser.parse_args()
     
@@ -44,3 +45,12 @@ if __name__ == '__main__':
     # Test.
     env = gym.make("LunarLander-v2", render_mode='human')
     agent.test(env, n_episodes=args.n_test)
+    env.close()
+    
+    # Save gif.
+    if args.save_gif:
+        env = gym.make("LunarLander-v2", render_mode='rgb_array')
+        agent.save_gif(env, file_name='lunar-lander.gif')
+        env.close()
+    
+    

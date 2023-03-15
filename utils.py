@@ -2,7 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+import matplotlib.pyplot as plt
 import random
+from matplotlib import animation
 from collections import deque
 from collections import namedtuple
 

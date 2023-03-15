@@ -1,4 +1,5 @@
 import numpy as np
+from PIL import Image
 
 class FrozenLakeAgent:
     """
@@ -281,4 +282,34 @@ class FrozenLakeAgent:
                 n_steps += 1
                 
             print('Episode : %d, length : %d, reward : %.3F' %(episode, n_steps, R))
+            
+    def save_gif(self, env, file_name='frozen-lake.gif'):
+        """
+        Description
+        --------------
+        Test the agent and save a gif.
+        
+        Arguments
+        --------------
+        env        : gym environment.
+        
+        Returns
+        --------------
+        """
+        
+        frames = []
+        state, _ = env.reset()
+        done = False
+        R = 0
+        n_steps = 0
+        while not done:
+            frames.append(Image.fromarray(env.render(), mode='RGB'))
+            action = self.action(state)
+            next_state, reward, terminated, truncated, _ = env.step(action)
+            done = (terminated or truncated)
+            state = next_state
+            R += reward
+            n_steps += 1
+        
+        frames[0].save(file_name, save_all=True, append_images=frames[1:], optimize=False, duration=150, loop=0)
         

@@ -13,11 +13,12 @@ if __name__ == '__main__':
     argparser.add_argument('--n_train', type=int, default=20000, help="Number of training episodes.")
     argparser.add_argument('--epsilon_start', type=float, default=1, help="Initial value of epsilon.")
     argparser.add_argument('--epsilon_stop', type=float, default=0.1, help="Final value of epsilon.")
-    argparser.add_argument('--decay_rate', type=float, default=4e-6, help="Decay rate of epsilon.")
+    argparser.add_argument('--decay_rate', type=float, default=2e-6, help="Decay rate of epsilon.")
     argparser.add_argument('--log_dir', type=str, default='runs_qlearning', help="Directory in which to store the tensorboard events.")
     argparser.add_argument('--thresh', type=float, default=450, help="Average return over which we terminate training.")
     argparser.add_argument('--n_test', type=int, default=10, help="Number of test episodes.")
     argparser.add_argument('--file_save', type=str, default='q_learning.pkl', help="Name of the pickle file where to save the q-values.")
+    argparser.add_argument('--save_gif', type=int, default=0, help="If 1, save gif of the tested agent, 0 otherwise.")
     
     args = argparser.parse_args()
     
@@ -36,3 +37,10 @@ if __name__ == '__main__':
     # Test.
     env = gym.make("CartPole-v1", render_mode='human')
     agent.test(env, n_episodes=args.n_test)
+    env.close()
+    
+    # Save gif.
+    if args.save_gif:
+        env = gym.make("CartPole-v1", render_mode='rgb_array')
+        agent.save_gif(env, file_name='cartpole.gif')
+        env.close()

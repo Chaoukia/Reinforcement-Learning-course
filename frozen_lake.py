@@ -14,6 +14,7 @@ if __name__ == '__main__':
     argparser.add_argument('--epsilon', type=float, default=1e-12, help="Discount factor of the MDP.")
     argparser.add_argument('--n_train', type=int, default=1000, help="Number of training episodes.")
     argparser.add_argument('--n_test', type=int, default=10, help="Number of test episodes.")
+    argparser.add_argument('--save_gif', type=int, default=0, help="If 1, save gif of the tested agent, 0 otherwise.")
     
     args = argparser.parse_args()
     
@@ -37,4 +38,10 @@ if __name__ == '__main__':
     env = gym.make('FrozenLake-v1', is_slippery=True, map_name=args.map_name, render_mode='human')
     agent.test(env, n_episodes=args.n_test)
     env.close()
+    
+    # Save gif.
+    if args.save_gif:
+        env = gym.make("FrozenLake-v1", is_slippery=True, map_name=args.map_name, render_mode='rgb_array')
+        agent.save_gif(env, file_name='frozen-lake.gif')
+        env.close()
     
