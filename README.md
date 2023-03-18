@@ -11,20 +11,29 @@ This repository contains an introductory course to Reinforcement Learning (RL) w
 
 Use file ```frozen_lake.py``` to train a Dynamic Programming agent on the FrozenLake environment, argument ```algorithm``` specifies which algorithm to use between ```value_iteration```, ```q_iteration``` and ```policy_oteration```. Example:
 ```
-python frozen_lake.py --map_name 4x4 --gamma 0.9 --algorithm policy_iteration --epsilon 1e-12 --n_train 1000 --n_test 10
+cd dynamic-programming
+python frozen_lake.py --map_name 4x4 --algorithm policy_iteration
 ```
 
 ## Q-Learning
 
 Use file ```cartpole.py``` to train a Q-Learning agent on the cartpole environment, arguments ```n_bins``` and ```n_initialise``` are very important as they initialise the bins that will be used to discretise the state space. Example:
 ```
-python cartpole.py --gamma 0.9 --n_bins 10 --n_initialise 10000 --n_train 20000 --epsilon_start 1 --epsilon_stop 0.1 --decay_rate 2e-6 --log_dir runs_qlearning --thresh 450 --n_test 10
+cd q-learning
+python cartpole.py --n_train 20000
 ```
 
 ## DQN
 
 Use file ```lunar_lander.py``` to train a DQN agent on the LunarLander environment. Example:
 ```
-python lunar_lander.py --train 1 --gamma 0.99 --n_pretrain 64 --n_train 1000 --epsilon_start 1 --epsilon_stop 0.01 --decay_rate 2e-5 --n_learn 5 --batch_size 64 --lr 1e-3 --max_tau 25 --thresh 250 --n_test 10
+cd dqn
+python lunar_lander.py --n_train 1000
 ```
+
+For Q-Learning and DQN, there is an argument ```log_dir``` that specifies the name of a folder where tensorboard events will be stored. To use tensorboard, let us suppose that we specified ```--log_dir runs_agent```, then we can track the evolution of some variables during training by entering:
+```
+tensorboard --logdir runs_agent
+```
+A message will then be displayed to describe how to open the localhost to visualise the tracked variables.
 
