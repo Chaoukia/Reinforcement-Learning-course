@@ -15,7 +15,7 @@ class DQN:
     Class of the DQN algorithm.
     """
     
-    def __init__(self, gamma=0.99, input_size=8, out=4, max_size=500000):
+    def __init__(self, gamma=0.99, input_size=8, fc_1_dim=512, fc_2_dim=256, out=4, max_size=500000):
         """
         Description
         -------------------------
@@ -30,8 +30,8 @@ class DQN:
         """
         
         self.gamma = gamma
-        self.q_network = DQNetwork(input_size=input_size, out=out)
-        self.q_network_target = DQNetwork(input_size=input_size, out=out)
+        self.q_network = DQNetwork(input_size=input_size, fc_1_dim=fc_1_dim, fc_2_dim=fc_2_dim, out=out)
+        self.q_network_target = DQNetwork(input_size=input_size, fc_1_dim=fc_1_dim, fc_2_dim=fc_2_dim, out=out)
         self.buffer = Memory(max_size=max_size)
         
     def action_explore(self, env, state, epsilon):

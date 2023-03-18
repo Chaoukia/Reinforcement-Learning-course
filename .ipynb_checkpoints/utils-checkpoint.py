@@ -16,7 +16,7 @@ class DQNetwork(nn.Module):
     Class of the neural network estimating the Q values in DQN.
     """
     
-    def __init__(self, input_size=8, out=4):
+    def __init__(self, input_size=8, fc_1_dim=512, fc_2_dim=256, out=4):
         """
         Description
         -------------------------
@@ -33,9 +33,9 @@ class DQNetwork(nn.Module):
         
         super(DQNetwork, self).__init__()
         
-        self.fc_1 = nn.Linear(input_size, 512)
-        self.fc_2 = nn.Linear(512, 256)
-        self.output = nn.Linear(256, out)
+        self.fc_1 = nn.Linear(input_size, fc_1_dim)
+        self.fc_2 = nn.Linear(fc_1_dim, fc_2_dim)
+        self.output = nn.Linear(fc_2_dim, out)
                 
     def forward(self, x):
         """

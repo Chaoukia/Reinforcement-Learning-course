@@ -1,4 +1,4 @@
-from frozen_lake_agent import *
+from dynamic_programming import *
 from time import time
 import gym
 import argparse
@@ -20,7 +20,7 @@ if __name__ == '__main__':
     
     # Training.
     env = gym.make('FrozenLake-v1', is_slippery=True, map_name=args.map_name)
-    agent = FrozenLakeAgent(env)
+    agent = FrozenLake(env, gamma=args.gamma)
     start_time = time()
     if args.algorithm == 'value_iteration':
         agent.value_iteration(epsilon=args.epsilon, n=args.n_train)
@@ -42,6 +42,6 @@ if __name__ == '__main__':
     # Save gif.
     if args.save_gif:
         env = gym.make("FrozenLake-v1", is_slippery=True, map_name=args.map_name, render_mode='rgb_array')
-        agent.save_gif(env, file_name='frozen-lake.gif')
+        agent.save_gif(env, file_name='../gifs/frozen-lake.gif')
         env.close()
     

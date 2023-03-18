@@ -26,7 +26,7 @@ if __name__ == '__main__':
     state_dim = env.observation_space.shape[0]
     n_actions = env.action_space.n
 
-    agent = QLearning(state_dim=state_dim, n_actions=n_actions, gamma=args.gamma)
+    agent = CartPole(state_dim=state_dim, n_actions=n_actions, gamma=args.gamma)
     agent.initialize(env, n_bins=args.n_bins, n_episodes=args.n_initialise)
 
     # Training.
