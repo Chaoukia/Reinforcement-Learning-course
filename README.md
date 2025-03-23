@@ -5,6 +5,7 @@ This repository contains an introductory course to Reinforcement Learning (RL) w
 <img align="center" src="gifs/lunar-lander.gif", width=400 height=auto/>
 <img align="center" src="gifs/cartpole.gif", width=400 height=auto/>
 <img align="center" src="gifs/frozen-lake.gif", width=300 height=auto/>
+  <img align="center" src="gifs/cliff-walking.gif", width=500 height=auto/>
 </p>
 
 ## Dynamic Programming
