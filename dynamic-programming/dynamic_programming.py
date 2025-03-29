@@ -221,7 +221,7 @@ class DynamicProgramming:
         print('avg : %.3f, std : %.3f' %(return_avg, return_std))
         return return_avg, return_std
             
-    def save_gif(self, env, file_name='frozen-lake.gif'):
+    def save_gif(self, env, file_name):
         """
         Description
         --------------
