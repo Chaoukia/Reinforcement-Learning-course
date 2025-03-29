@@ -85,38 +85,95 @@ class CliffWalkingAstar(Astar):
             reward, next_state = -1, next_state_index[0]*self.shape[1] + next_state_index[1]
 
         return reward, next_state
-
-    def expand(self, info_state):
+    
+class FrozenLakeAstar(Astar):
+    """
+    Description
+    --------------
+    Class describing an A* agent operating in the FrozenLake environment.
+    """
+    
+    def __init__(self, env):
         """
         Description
         --------------
-        Expand a state by returning the states that stem from it by taking each possible action.
-
+        Constructor of class FrozenLakeAgent.
+        
         Arguments
         --------------
-        info_state : List of three elements.
-                        - value   : Float, heuristic value of state. Equal to the sum of rewards following actions from the root plus an upper bound on the return of the optimal policy from state.
-                        - reward  : Float, sum of rewards following actions from the root.
-                        - actions : List of actions that lead to state from the initial state (root).
-                        - state   : Int, a state.
+        env   : FrozenLake-v1 environment.
+        map   : np.array, the grid map of the environment.
+        shape : Tuple, shape of the map grid.
+        goals : Set of goal states.
+        holes : Set of holes, these are bad absorbing states.
+        """
+        
+        super(FrozenLakeAstar, self).__init__(env)
+        self.map = env.unwrapped.desc.astype(str)
+        self.shape = self.map.shape
+        self.goals = set(np.arange(self.map.shape[0]*self.map.shape[1]).reshape((self.map.shape[0], self.map.shape[1]))[self.map == 'G'])
+        self.holes = set(np.arange(self.map.shape[0]*self.map.shape[1]).reshape((self.map.shape[0], self.map.shape[1]))[self.map == 'H'])
+
+    def heuristic(self, state):
+        """
+        Description
+        --------------
+        Return an upper bound on the optimal value at state.
+        Arguments
+        --------------
+        state : Int, a state.
 
         Returns
         --------------
-        info_children : List of lists of the form [value, actions, next_state] where:
-                        - value      : Float, heuristic value of next_state. Equal to the sum of rewards following actions from the root plus an upper bound on the return of the optimal policy from next_state.
-                        - reward     : Float, sum of rewards following actions from the root.
-                        - actions    : List of actions that lead to next_state from the initial state (root).
-                        - next_state : Int, a next (child) state that stems from taking an action in state.
+        Float, the heuristic value of state.
         """
 
-        _, reward_neg, actions, state = info_state
-        reward = -reward_neg
-        info_children = []
-        for action in range(self.n_actions):
-            r, child = self.split(state, action)
-            reward_child = reward + r
-            value_child = reward_child + self.heuristic(child)
-            info_child = [-value_child, -reward_child, actions + [action], child]
-            info_children.append(info_child)
+        if state in self.holes:
+            return 0
 
-        return info_children
+        return 1
+
+    def split(self, state, action):
+        """
+        Description
+        --------------
+        Return the reward and next state induced by taking an action in a state.
+
+        Arguments
+        --------------
+        state  : Int, a state.
+        action : Int, an action.
+
+        Returns
+        --------------
+        Float, the induced reward.
+        Int, the corresponding next state.
+        """
+
+        # A hole is an absorbing state.
+        if state in self.holes:
+            return 0, state
+
+        state_index = np.unravel_index(state, self.shape)
+        if action == 0: # Go left.
+            next_state_index = np.array(state_index)
+            next_state_index[1] = max(0, next_state_index[1] - 1)
+            next_state = next_state_index[0]*self.shape[0] + next_state_index[1]
+
+        elif action == 2: # Go right.
+            next_state_index = np.array(state_index)
+            next_state_index[1] = min(self.shape[1] - 1, next_state_index[1] + 1)
+            next_state = next_state_index[0]*self.shape[0] + next_state_index[1]
+
+        elif action == 1: # Go down.
+            next_state_index = np.array(state_index)
+            next_state_index[0] = min(self.shape[0] - 1, next_state_index[0] + 1)
+            next_state = next_state_index[0]*self.shape[0] + next_state_index[1]
+
+        elif action == 3: # Go up.
+            next_state_index = np.array(state_index)
+            next_state_index[0] = max(0, next_state_index[0] - 1)
+            next_state = next_state_index[0]*self.shape[0] + next_state_index[1]
+
+        reward = 1 if next_state in self.goals else 0
+        return reward, next_state

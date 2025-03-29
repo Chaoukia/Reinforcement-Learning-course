@@ -1,6 +1,6 @@
 import argparse
 import gymnasium as gym
-from agents import CliffWalking
+from agents import CliffWalkingDP
 from time import time
 
 if __name__ == '__main__':
@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     # Train.
     env = gym.make('CliffWalking-v0')
-    agent = CliffWalking(env, gamma=args.gamma)
+    agent = CliffWalkingDP(env, gamma=args.gamma)
     start_time = time()
     if args.algorithm == 'value_iteration':
         agent.value_iteration(epsilon=args.epsilon, n=args.n_train)

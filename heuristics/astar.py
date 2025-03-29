@@ -90,21 +90,31 @@ class Astar:
         Arguments
         --------------
         info_state : List of three elements.
-                        - value   : Float, negative heuristic value of state. Equal to the sum of rewards following actions from the root plus an upper bound on the return of the optimal policy from state.
-                        - reward  : Float, negative sum of rewards following actions from the root.
+                        - value   : Float, heuristic value of state. Equal to the sum of rewards following actions from the root plus an upper bound on the return of the optimal policy from state.
+                        - reward  : Float, sum of rewards following actions from the root.
                         - actions : List of actions that lead to state from the initial state (root).
                         - state   : Int, a state.
 
         Returns
         --------------
-        List of lists of the form [value, actions, next_state] where:
-            - value      : Float, negative heuristic value of next_state. Equal to the sum of rewards following actions from the root plus an upper bound on the return of the optimal policy from next_state.
-            - reward     : Float, negative sum of rewards following actions from the root.
-            - actions    : List of actions that lead to next_state from the initial state (root).
-            - next_state : Int, a next (child) state that stems from taking an action in state.
+        info_children : List of lists of the form [value, actions, next_state] where:
+                        - value      : Float, heuristic value of next_state. Equal to the sum of rewards following actions from the root plus an upper bound on the return of the optimal policy from next_state.
+                        - reward     : Float, sum of rewards following actions from the root.
+                        - actions    : List of actions that lead to next_state from the initial state (root).
+                        - next_state : Int, a next (child) state that stems from taking an action in state.
         """
 
-        raise NotImplementedError
+        _, reward_neg, actions, state = info_state
+        reward = -reward_neg
+        info_children = []
+        for action in range(self.n_actions):
+            r, child = self.split(state, action)
+            reward_child = reward + r
+            value_child = reward_child + self.heuristic(child)
+            info_child = [-value_child, -reward_child, actions + [action], child]
+            info_children.append(info_child)
+
+        return info_children
     
     def train(self, root):
         """

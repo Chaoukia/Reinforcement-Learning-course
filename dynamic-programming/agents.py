@@ -1,6 +1,6 @@
 from dynamic_programming import *
 
-class FrozenLake(DynamicProgramming):
+class FrozenLakeDP(DynamicProgramming):
     """
     Description
     --------------
@@ -17,17 +17,13 @@ class FrozenLake(DynamicProgramming):
         --------------
         env          : FrozenLake-v1 environment.
         gamma        : Float in [0, 1] generally close to 1, discount factor.
-        map          : np.array of shape (4, 4) or (5, 5), the grid map of the environment.
-        n_states     : Int, the number of states.
-        n_actions    : Int, the number of actions.
+        map          : np.array of shape, the grid map of the environment.
+        shape        : Tuple, shape of the map grid.
         p_transition : np.array of shape (n_state, n_actions, n_states), the transition probabilities matrix.
         r_transition : np.array of shape (n_state, n_actions, n_states), the transition rewards matrix.
-        value        : np.array of shape (n_states,) or None, state values.
-        q_values     : np.array of shape (n_states, n_actions) or None, q-values.
-        policy       : np.array of shape (n_states,) or None, policy.
         """
         
-        super(FrozenLake, self).__init__(env, gamma)
+        super(FrozenLakeDP, self).__init__(env, gamma)
         self.map = env.unwrapped.desc.astype(str)
         self.shape = self.map.shape
         self.p_transition, self.r_transition = self.make_transition_matrices()
@@ -139,7 +135,7 @@ class FrozenLake(DynamicProgramming):
                         
         return p_transition, r_transition
     
-class CliffWalking(DynamicProgramming):
+class CliffWalkingDP(DynamicProgramming):
     """
     Description
     --------------
@@ -165,7 +161,7 @@ class CliffWalking(DynamicProgramming):
         policy       : np.array of shape (n_states,) or None, policy.
         """
         
-        super(CliffWalking, self).__init__(env, gamma)
+        super(CliffWalkingDP, self).__init__(env, gamma)
         self.shape = (4, 12)
         self.p_transition, self.r_transition = self.make_transition_matrices()
         
