@@ -249,5 +249,6 @@ class DynamicProgramming:
             state = next_state
             R += reward
             n_steps += 1
-        
+
+        frames.append(Image.fromarray(env.render(), mode='RGB'))
         frames[0].save(file_name, save_all=True, append_images=frames[1:], optimize=False, duration=150, loop=0)
