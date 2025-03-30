@@ -142,7 +142,7 @@ class CliffWalkingDP(DynamicProgramming):
     """
     Description
     --------------
-    Class describing an agent operating in the FrozenLake environment.
+    Class describing an agent operating in the CliffWalking environment.
     """
     
     def __init__(self, env, gamma=0.9):
@@ -232,7 +232,7 @@ class TaxiDP(DynamicProgramming):
     """
     Description
     --------------
-    Class describing an agent operating in the FrozenLake environment.
+    Class describing an agent operating in the Taxi-v3 environment.
     """
     
     def __init__(self, env, gamma=0.9):
