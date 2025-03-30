@@ -29,10 +29,9 @@ class DynamicProgramming:
         
         self.env = env
         self.gamma = gamma
-        self.n_states = env.observation_space.n
-        self.n_actions = env.action_space.n
+        self.n_states = None
+        self.n_actions = None
         self.p_transition, self.r_transition = None, None
-        self.reset()
 
     def reset(self):
         """
@@ -148,7 +147,6 @@ class DynamicProgramming:
         
         i=0
         delta = 1
-        self.value = np.zeros(self.n_states)
         while i < n:
             p_transition_policy = self.p_transition[np.arange(self.n_states), self.policy, :]
             r_transition_policy = self.r_transition[np.arange(self.n_states), self.policy, :]
@@ -221,7 +219,7 @@ class DynamicProgramming:
         print('avg : %.3f, std : %.3f' %(return_avg, return_std))
         return return_avg, return_std
             
-    def save_gif(self, env, file_name):
+    def save_gif(self, env, file_name, n_episodes=1):
         """
         Description
         --------------
@@ -237,18 +235,20 @@ class DynamicProgramming:
         """
         
         frames = []
-        state, _ = env.reset()
-        done = False
-        R = 0
-        n_steps = 0
-        while not done:
-            frames.append(Image.fromarray(env.render(), mode='RGB'))
-            action = self.action(state)
-            next_state, reward, terminated, truncated, _ = env.step(action)
-            done = (terminated or truncated)
-            state = next_state
-            R += reward
-            n_steps += 1
+        for i in range(n_episodes):
+            state, _ = env.reset()
+            done = False
+            R = 0
+            n_steps = 0
+            while not done:
+                frames.append(Image.fromarray(env.render(), mode='RGB'))
+                action = self.action(state)
+                next_state, reward, terminated, truncated, _ = env.step(action)
+                done = (terminated or truncated)
+                state = next_state
+                R += reward
+                n_steps += 1
 
-        frames.append(Image.fromarray(env.render(), mode='RGB'))
+            frames.append(Image.fromarray(env.render(), mode='RGB'))
+            
         frames[0].save(file_name, save_all=True, append_images=frames[1:], optimize=False, duration=150, loop=0)
