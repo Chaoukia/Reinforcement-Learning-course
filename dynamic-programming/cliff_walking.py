@@ -19,7 +19,7 @@ if __name__ == '__main__':
     args = argparser.parse_args()
 
     # Train.
-    env = gym.make('CliffWalking-v0')
+    env = gym.make('CliffWalking-v0', max_episode_steps=args.max_steps)
     agent = CliffWalkingDP(env, gamma=args.gamma)
     start_time = time()
     if args.algorithm == 'value_iteration':
@@ -34,12 +34,12 @@ if __name__ == '__main__':
     print('Execution time :', time() - start_time)
     
     # Test.
-    env = gym.make('CliffWalking-v0', render_mode='human')
+    env = gym.make('CliffWalking-v0', max_episode_steps=args.max_steps, render_mode='human')
     agent.test(env, n_episodes=args.n_test, verbose=args.verbose)
     env.close()
     
     # Save gif.
     if args.save_gif:
-        env = gym.make("CliffWalking-v0", render_mode='rgb_array')
+        env = gym.make("CliffWalking-v0", max_episode_steps=args.max_steps, render_mode='rgb_array')
         agent.save_gif(env, file_name='../gifs/cliff-walking.gif')
         env.close()

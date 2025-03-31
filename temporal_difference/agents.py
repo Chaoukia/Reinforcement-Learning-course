@@ -1,6 +1,6 @@
-from mc import *
+from q_learning import *
 
-class FrozenLakeMC(MonteCarlo):
+class FrozenLakeQLearning(QLearning):
     """
     Description
     --------------
@@ -22,12 +22,12 @@ class FrozenLakeMC(MonteCarlo):
         q_values     : np.array of shape (n_states, n_actions) or None, q-values.
         """
         
-        super(FrozenLakeMC, self).__init__(env, gamma)
+        super(FrozenLakeQLearning, self).__init__(env, gamma)
         self.n_states = env.observation_space.n
         self.n_actions = env.action_space.n
         self.reset()
 
-class CliffWalkingMC(MonteCarlo):
+class CliffWalkingQLearning(QLearning):
     """
     Description
     --------------
@@ -49,12 +49,12 @@ class CliffWalkingMC(MonteCarlo):
         q_values     : np.array of shape (n_states, n_actions) or None, q-values.
         """
         
-        super(CliffWalkingMC, self).__init__(env, gamma)
+        super(CliffWalkingQLearning, self).__init__(env, gamma)
         self.n_states = env.observation_space.n
         self.n_actions = env.action_space.n
         self.reset()
 
-class TaxiMC(MonteCarlo):
+class TaxiQLearning(QLearning):
     """
     Description
     --------------
@@ -76,12 +76,12 @@ class TaxiMC(MonteCarlo):
         q_values     : np.array of shape (n_states, n_actions) or None, q-values.
         """
         
-        super(TaxiMC, self).__init__(env, gamma)
+        super(TaxiQLearning, self).__init__(env, gamma)
         self.n_states = env.observation_space.n
         self.n_actions = env.action_space.n
         self.reset()
 
-class BlackJackMC(MonteCarlo):
+class BlackJackQLearning(QLearning):
     """
     Description
     --------------
@@ -103,6 +103,6 @@ class BlackJackMC(MonteCarlo):
         q_values     : np.array of shape (n_states, n_actions) or None, q-values.
         """
         
-        super(BlackJackMC, self).__init__(env, gamma)
+        super(BlackJackQLearning, self).__init__(env, gamma)
         self.n_actions = env.action_space.n
         self.reset()
