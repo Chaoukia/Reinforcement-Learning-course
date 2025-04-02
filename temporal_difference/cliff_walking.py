@@ -1,6 +1,6 @@
 import argparse
 import gymnasium as gym
-from agents import CliffWalkingQLearning
+from agents import CliffWalkingQLearning, CliffWalkingSARSA
 from time import time
 
 if __name__ == '__main__':
@@ -9,6 +9,7 @@ if __name__ == '__main__':
     
     argparser.add_argument('--max_steps', type=float, default=100, help="Maximum number of steps per episode.")
     argparser.add_argument('--gamma', type=float, default=0.99, help="Discount factor of the MDP.")
+    argparser.add_argument('--algorithm', type=str, default='q_learning', help="String in {'q_learning', 'sarsa'}, the algorithm to use.")
     argparser.add_argument('--alpha', type=float, default=0.1, help="Step size parameter for Q-Learning.")
     argparser.add_argument('--epsilon_start', type=float, default=1, help="Initial value of epsilon.")
     argparser.add_argument('--epsilon_stop', type=float, default=0.1, help="Final value of epsilon.")
@@ -20,9 +21,16 @@ if __name__ == '__main__':
     
     args = argparser.parse_args()
 
+    assert args.algorithm in set(['q_learning', 'sarsa']), "algorithm should be in {'q_learning', 'sarsa'}."
+
     # Train.
     env = gym.make('CliffWalking-v0', max_episode_steps=args.max_steps)
-    agent = CliffWalkingQLearning(env, gamma=args.gamma)
+    if args.algorithm == 'q_learning':
+        agent = CliffWalkingQLearning(env, gamma=args.gamma)
+
+    elif args.algorithm == 'sarsa':
+        agent = CliffWalkingSARSA(env, gamma=args.gamma)
+        
     start_time = time()
     agent.train(alpha=args.alpha, epsilon_start=args.epsilon_start, epsilon_stop=args.epsilon_stop, n_train=args.n_train, print_iter=1000, decay_rate=args.decay_rate)
     print('Execution time :', time() - start_time)

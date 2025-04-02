@@ -1,10 +1,10 @@
 import numpy as np
 from PIL import Image
 
-class QLearning:
+class SARSA:
     
     """
-    Class of the Q-Learning algorithm.
+    Class of the SARSA algorithm.
     """
     
     def __init__(self, env, gamma=0.9):
@@ -85,11 +85,11 @@ class QLearning:
         except KeyError:
             return self.env.action_space.sample()
         
-    def update_q_value(self, state, action, reward, next_state, alpha):
+    def update_q_value(self, state, action, reward, next_state, alpha, epsilon):
         """
         Description
         --------------
-        Perform a q-learning update of experience (state, action, reward, next_state).
+        Perform a sarsa update of experience (state, action, reward, next_state).
         
         Arguments
         --------------
@@ -99,7 +99,8 @@ class QLearning:
         """
 
         try:
-            q_max = self.q_values[next_state].max()
+            action_next = self.action_explore(next_state, epsilon)
+            q_max = self.q_values[next_state][action_next]
 
         except KeyError:
             self.q_values[next_state], self.visits[next_state] = np.zeros(self.n_actions), np.zeros(self.n_actions)
@@ -139,7 +140,7 @@ class QLearning:
             action = self.action_explore(state, epsilon)
             next_state, reward, terminated, truncated, _ = self.env.step(action)
             done = (terminated or truncated)
-            self.update_q_value(state, action, reward, next_state, alpha)
+            self.update_q_value(state, action, reward, next_state, alpha, epsilon)
             state = next_state
             
     def train(self, alpha=0.1, epsilon_start=1, epsilon_stop=0.1, decay_rate=1e-3, n_train=1000, print_iter=10):
