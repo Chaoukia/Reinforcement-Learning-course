@@ -1,6 +1,6 @@
 import argparse
 import gymnasium as gym
-from agents import FrozenLakeQLearning, FrozenLakeSARSA, FrozenLakeExpectedSarsa
+from agents import FrozenLakeQLearning, FrozenLakeSARSA, FrozenLakeExpectedSarsa, FrozenLakeDoubleQLearning
 from time import time
 
 if __name__ == '__main__':
@@ -10,7 +10,7 @@ if __name__ == '__main__':
     argparser.add_argument('--gamma', type=float, default=0.99, help="Discount factor of the MDP.")
     argparser.add_argument('--map_name', type=str, default='4x4', help="Map grid, either 8x8 or 4x4.")
     argparser.add_argument('--is_slippery', type=int, default=0, help="Whether the map is slippery or not.")
-    argparser.add_argument('--algorithm', type=str, default='q_learning', help="String in {'q_learning', 'sarsa', 'expected_sarsa'}, the algorithm to use.")
+    argparser.add_argument('--algorithm', type=str, default='q_learning', help="String in {'q_learning', 'sarsa', 'expected_sarsa, double_q_learning'}, the algorithm to use.")
     argparser.add_argument('--alpha', type=float, default=0.1, help="Step size parameter for Q-Learning.")
     argparser.add_argument('--epsilon_start', type=float, default=1, help="Initial value of epsilon.")
     argparser.add_argument('--epsilon_stop', type=float, default=0.1, help="Final value of epsilon.")
@@ -22,7 +22,7 @@ if __name__ == '__main__':
     
     args = argparser.parse_args()
 
-    assert args.algorithm in set(['q_learning', 'sarsa', 'expected_sarsa']), "algorithm should be in {'q_learning', 'sarsa', 'expected_sarsa'}."
+    assert args.algorithm in set(['q_learning', 'sarsa', 'expected_sarsa', 'double_q_learning']), "algorithm should be in {'q_learning', 'sarsa', 'expected_sarsa', 'double_q_learning'}."
 
     # Train.
     env = gym.make('FrozenLake-v1', is_slippery=args.is_slippery, map_name=args.map_name)
@@ -34,6 +34,9 @@ if __name__ == '__main__':
 
     elif args.algorithm == 'expected_sarsa':
         agent = FrozenLakeExpectedSarsa(env, gamma=args.gamma)
+
+    elif args.algorithm == 'double_q_learning':
+        agent = FrozenLakeDoubleQLearning(env, gamma=args.gamma)
 
     start_time = time()
     agent.train(alpha=args.alpha, epsilon_start=args.epsilon_start, epsilon_stop=args.epsilon_stop, n_train=args.n_train, print_iter=1000, decay_rate=args.decay_rate)
