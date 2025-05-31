@@ -1,13 +1,9 @@
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
-import random
 from utils import *
-from torch.utils.tensorboard import SummaryWriter
 from PIL import Image
-
 
 class DQN:
     
@@ -15,7 +11,7 @@ class DQN:
     Class of the DQN algorithm.
     """
     
-    def __init__(self, gamma=0.99, input_size=8, fc_1_dim=512, fc_2_dim=256, out=4, max_size=500000):
+    def __init__(self, env, gamma=0.99, max_size=500000):
         """
         Description
         -------------------------
@@ -24,17 +20,15 @@ class DQN:
         Arguments and Attributes
         -------------------------
         gamma      : Float in [0, 1] generally very close to 1, discount factor.
-        input_size : Int, dimension of the state space.
-        out        : Int, output dimension, equal to the number of possible actions.
         max_size   : Int, maximum size of the replay memory.
         """
         
+        self.env = env
         self.gamma = gamma
-        self.q_network = DQNetwork(input_size=input_size, fc_1_dim=fc_1_dim, fc_2_dim=fc_2_dim, out=out)
-        self.q_network_target = DQNetwork(input_size=input_size, fc_1_dim=fc_1_dim, fc_2_dim=fc_2_dim, out=out)
+        self.q_network = None
         self.buffer = Memory(max_size=max_size)
         
-    def action_explore(self, env, state, epsilon):
+    def action_explore(self, state, epsilon):
         """
         Description
         --------------
@@ -42,7 +36,6 @@ class DQN:
         
         Arguments
         --------------
-        env     : gym environment.
         state   : np.array, state from a gym environment.
         epsilon : Float in [0, 1], parameter of the epsilon-greedy policy.
         
@@ -52,15 +45,9 @@ class DQN:
         """
         
         bern = np.random.binomial(1, epsilon)
-        if bern == 1:
-            action = env.action_space.sample()
+        if bern == 1: return self.env.action_space.sample()
 
-        else:
-            with torch.no_grad():
-                q_values = self.q_network(torch.from_numpy(state))
-                action = torch.argmax(q_values).item()
-
-        return action
+        return self.action(state)
 
     def action(self, state):
         """
@@ -81,22 +68,68 @@ class DQN:
             q_values = self.q_network(torch.from_numpy(state))
             return torch.argmax(q_values).item()
         
-    def update_target(self):
+    def update_q_network(self, batch_size, optimizer):
         """
         Description
         -------------
-        Update the weights of the target network with those of the main network.
+        Update the weights of the q network.
         
         Arguments
         -------------
+        batch_size : Int, the batch size.
         
         Returns
         --------------
         """
+
+        batch = self.buffer.sample(batch_size)
+        states_batch = torch.cat(batch.state)
+        actions_batch = np.concatenate(batch.action)
+        rewards_batch = torch.cat(batch.reward)
+        next_states_batch = torch.cat(batch.next_state)
+        dones_batch = torch.cat(batch.done)
+        with torch.no_grad():
+            q_values_next_states = self.q_network(next_states_batch)
+            q_targets = rewards_batch + self.gamma*torch.max(q_values_next_states, dim=1).values*dones_batch
+
+        q_values = self.q_network(states_batch)[np.arange(batch_size), actions_batch]
+        loss = F.mse_loss(q_values, q_targets)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+    def unroll(self, epsilon_start, epsilon_stop, epsilon, decay_rate, it, n_learn, batch_size, optimizer):
+        """
+        Description
+        --------------
+        Unroll an episode.
         
-        self.q_network_target.load_state_dict(self.q_network.state_dict())
+        Arguments
+        --------------
+        
+        Returns
+        --------------
+        """
+
+        state, _ = self.env.reset()
+        done = False
+        reward_episode = 0
+        while not done:
+            action = self.action_explore(state, epsilon)
+            it += 1
+            epsilon = epsilon_stop + (epsilon_start - epsilon_stop)*np.exp(-decay_rate*it)
+            next_state, reward, terminated, truncated, _ = self.env.step(action)
+            reward_episode += reward
+            done = (terminated or truncated)
+            self.buffer.add(state, action, reward, next_state, 1 - done)
+            state = next_state
+            
+            # Learning phase
+            if it%n_learn == 0: self.update_q_network(batch_size, optimizer)
+
+        return reward_episode, epsilon, it
     
-    def pretrain(self, env, n_episodes):
+    def pretrain(self, n_episodes, pretrain=100):
         """
         Description
         --------------
@@ -104,7 +137,6 @@ class DQN:
         
         Arguments
         --------------
-        env        : gym environment.
         n_episodes : Int, number of episodes in the pretraining phase.
         
         Returns
@@ -112,20 +144,20 @@ class DQN:
         """
         
         for episode in range(n_episodes):
-            state, _ = env.reset()
+            state, _ = self.env.reset()
             done = False
             while not done:
-                action = env.action_space.sample()
-                next_state, reward, terminated, truncated, _ = env.step(action)
+                action = self.env.action_space.sample()
+                next_state, reward, terminated, truncated, _ = self.env.step(action)
                 done = (terminated or truncated)
                 self.buffer.add(state, action, reward, next_state, 1 - done)
                 state = next_state
                 
-            if episode%10 == 0:
+            if episode%pretrain == 0:
                 print('pretrain : %d' %episode)
                 
-    def train(self, env, n_episodes=1000, n_pretrain=100, epsilon_start=1, epsilon_stop=0.01, decay_rate=1e-3, n_learn=5, batch_size=32, lr=1e-4, max_tau=50, log_dir='runs/', 
-             thresh=250, file_save='dqn.pth'):
+    def train(self, n_episodes=1000, n_pretrain=100, epsilon_start=1, epsilon_stop=0.01, decay_rate=1e-3, 
+              n_learn=5, batch_size=32, lr=1e-4, thresh=250, file_save='dqn.pth', print_iter=10):
         """
         Description
         --------------
@@ -133,7 +165,6 @@ class DQN:
         
         Arguments
         --------------
-        env           : gym environment.
         n_episodes    : Int, number of episodes in training phase.
         n_pretrain    : Int, number of episodes in the pretraining phase.
         epsilon_start : Float in [0, 1], initial value of epsilon.
@@ -143,7 +174,6 @@ class DQN:
         batch_size    : Int, size of the batch to sample from the replay buffer.
         lr            : Float, learning rate.
         max_tau       : Int, number of iterations between two consecutive updates of the target network.
-        log_dir       : String, path of the folder where to store tensorboard events.
         thresh        : Float, lower bound on the average of the last 10 training episodes above which early stopping is activated.
         file_save     : String, name of the file containingt the saved network weights.
         
@@ -151,71 +181,40 @@ class DQN:
         --------------
         """
 
-        # Pretraining.
-        writer = SummaryWriter(log_dir=log_dir)
-        variables = {'loss' : deque(maxlen=100), 'return' : deque(maxlen=10)}
-        self.pretrain(env, n_pretrain)
-        epsilon = epsilon_start
-        it = 0
         optimizer = optim.Adam(self.q_network.parameters(), lr=lr)
-        tau = 0
+
+        # Pretraining.
+        self.pretrain(n_pretrain)
+        epsilon, it = epsilon_start, 0
+
         # Training.
+        rewards = deque(maxlen=100)
+        reward_mean = None
         for episode in range(n_episodes):
-            state, _ = env.reset()
-            done = False
-            R = 0
-            n_steps = 0
-            while not done:
-                action = self.action_explore(env, state, epsilon)
-                it += 1
-                tau += 1
-                epsilon = epsilon_stop + (epsilon_start - epsilon_stop)*np.exp(-decay_rate*it)
-                next_state, reward, terminated, truncated, _ = env.step(action)
-                R += reward
-                done = (terminated or truncated)
-                self.buffer.add(state, action, reward, next_state, 1 - done)
-                state = next_state
-                n_steps += 1
-                
-                # Learning phase
-                if it%n_learn == 0:
-                    batch = self.buffer.sample(batch_size)
-                    states_batch = torch.cat(batch.state)
-                    actions_batch = np.concatenate(batch.action)
-                    rewards_batch = torch.cat(batch.reward)
-                    next_states_batch = torch.cat(batch.next_state)
-                    dones_batch = torch.cat(batch.done)
-                    with torch.no_grad():
-                        q_values_next_states = self.q_network_target(next_states_batch)
-                        q_targets = rewards_batch + self.gamma*torch.max(q_values_next_states, dim=1).values*dones_batch
+            reward_episode, epsilon, it = self.unroll(epsilon_start, epsilon_stop, epsilon, decay_rate, it, n_learn, batch_size, optimizer)
+            if len(rewards) < rewards.maxlen:
+                rewards.append(reward_episode)
 
-                    q_values = self.q_network(states_batch)[np.arange(batch_size), actions_batch]
-                    loss = F.mse_loss(q_values, q_targets)
-                    variables['loss'].append(loss.item())
-                    optimizer.zero_grad()
-                    loss.backward()
-                    optimizer.step()
-                    
-                    if it%(10*n_learn) == 0:
-                        writer.add_scalar('Loss', np.mean(variables['loss']), it)
+            else:
+                if reward_mean is None:
+                    reward_mean = np.mean(rewards)
 
-                # Update the weights of the target network.
-                if tau == max_tau:
-                    self.update_target()
-                    tau = 0
-                    
-            variables['return'].append(R)
-            R_mean = np.mean(variables['return'])
-            writer.add_scalar('return', R_mean, episode)                   
-            if episode%1 == 0:
-                print('Episode : %d, epsilon : %.3f, length : %d, return : %.3F' %(episode, epsilon, n_steps, R))
+                else:
+                    reward_mean += (reward_episode - rewards[0])/rewards.maxlen
+
+                rewards.append(reward_episode)
+                if reward_mean >= thresh:
+                    print('Early stopping achieved after %d episodes' %episode)
+                    self.save_weights(file_save)
+                    return
                 
-            if R_mean > thresh:
-                print('Early stopping achieved after %d episodes' %episode)
-                self.save_weights(file_save)
-                break
+            if episode%print_iter == 0 and reward_mean is not None:
+                print('Episode : %d, epsilon : %.3f, return : %.3F' %(episode, epsilon, reward_mean))
+            
+        print('Training finished without early stopping.')
+        self.save_weights(file_save)
                     
-    def test(self, env, n_episodes=10):
+    def test(self, env, n_episodes=1000, verbose=False):
         """
         Description
         --------------
@@ -223,13 +222,15 @@ class DQN:
         
         Arguments
         --------------
-        env        : gym environment.
+        env        : gymnasium environment.
         n_episodes : Int, number of test episodes.
+        verbose    : Boolean, if True, print the episode index and its corresponding length and return.
         
         Returns
         --------------
         """
         
+        returns = np.empty(n_episodes)
         for episode in range(n_episodes):
             state, _ = env.reset()
             done = False
@@ -243,9 +244,15 @@ class DQN:
                 R += reward
                 n_steps += 1
                 
-            print('Episode : %d, length : %d, reward : %.3F' %(episode, n_steps, R))
+            returns[episode] = R
+            if verbose:
+                print('Episode : %d, length : %d, return : %.3F' %(episode, n_steps, R))
+
+        return_avg, return_std = returns.mean(), returns.std()
+        print('avg : %.3f, std : %.3f' %(return_avg, return_std))
+        return return_avg, return_std
             
-    def save_gif(self, env, file_name='lunar-lander.gif'):
+    def save_gif(self, env, file_name, n_episodes=1, duration=40):
         """
         Description
         --------------
@@ -260,21 +267,18 @@ class DQN:
         """
         
         frames = []
-        state, _ = env.reset()
-        done = False
-        R = 0
-        n_steps = 0
-        while not done:
-            frames.append(Image.fromarray(env.render(), mode='RGB'))
-            action = self.action(state)
-            next_state, reward, terminated, truncated, _ = env.step(action)
-            done = (terminated or truncated)
-            state = next_state
-            R += reward
-            n_steps += 1
+        for i in range(n_episodes):
+            state, _ = env.reset()
+            done = False
+            while not done:
+                frames.append(Image.fromarray(env.render(), mode='RGB'))
+                action = self.action(state)
+                next_state, _, terminated, truncated, _ = env.step(action)
+                done = (terminated or truncated)
+                state = next_state
         
-        frames[0].save(file_name, save_all=True, append_images=frames[1:], optimize=True, duration=40, loop=0)
-            
+        frames[0].save(file_name, save_all=True, append_images=frames[1:], optimize=True, duration=duration, loop=0)
+        
     def save_weights(self, path):
         """
         Description

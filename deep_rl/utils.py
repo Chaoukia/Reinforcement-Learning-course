@@ -1,60 +1,8 @@
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import numpy as np
-import matplotlib.pyplot as plt
 import random
-from matplotlib import animation
-from collections import deque
-from collections import namedtuple
+from collections import deque, namedtuple
 
 Transition = namedtuple('Transition', ('state', 'action', 'reward', 'next_state', 'done'))
-
-class DQNetwork(nn.Module):
-    
-    """
-    Class of the neural network estimating the Q values in DQN.
-    """
-    
-    def __init__(self, input_size=8, fc_1_dim=512, fc_2_dim=256, out=4):
-        """
-        Description
-        -------------------------
-        Constructor of DQNetwork class.
-        
-        Arguments & Attributes
-        -------------------------
-        input_size : Int, dimension of the state space.
-        out        : Int, output dimension, equal to the number of possible actions.
-        fc_1       : nn.Linear, first fully connected layer.
-        fc_2       : nn.Linear, second fully connected layer.
-        output     : nn.Linear, output fully connected layer.
-        """
-        
-        super(DQNetwork, self).__init__()
-        
-        self.fc_1 = nn.Linear(input_size, fc_1_dim)
-        self.fc_2 = nn.Linear(fc_1_dim, fc_2_dim)
-        self.output = nn.Linear(fc_2_dim, out)
-                
-    def forward(self, x):
-        """
-        Description
-        ---------------
-        The forward pass.
-        
-        Arguments
-        ---------------
-        x : torch.tensor of dimension (batch_size, input_size)
-        
-        Returns
-        ---------------
-        torch.tensor of dimension (batch_size, out)
-        """
-        
-        x = F.relu(self.fc_1(x))
-        x = F.relu(self.fc_2(x))
-        return self.output(x)
     
 class Memory:
     
@@ -104,7 +52,7 @@ class Memory:
         
         Arguments
         -------------
-        batch_size : Int, the number of tarnsitions to sample.
+        batch_size : Int, the number of transitions to sample.
         
         Returns
         -------------
