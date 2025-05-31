@@ -142,11 +142,11 @@ class QLearning:
             self.update_q_value(state, action, reward, next_state, alpha)
             state = next_state
             
-    def train(self, alpha=0.1, epsilon_start=1, epsilon_stop=0.1, decay_rate=1e-3, n_train=1000, print_iter=10):
+    def train(self, alpha=0.1, epsilon_start=1, epsilon_stop=0.1, decay_rate=1e-3, n_train=1000, print_iter=100):
         """
         Description
         --------------
-        Train an on-policy first-visit MC algorithm.
+        Train a Q-Learning algorithm.
         
         Arguments
         --------------
