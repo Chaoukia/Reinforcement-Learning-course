@@ -83,11 +83,11 @@ class DQN:
         """
 
         batch = self.buffer.sample(batch_size)
-        states_batch = torch.cat(batch.state)
-        actions_batch = np.concatenate(batch.action)
-        rewards_batch = torch.cat(batch.reward)
-        next_states_batch = torch.cat(batch.next_state)
-        dones_batch = torch.cat(batch.done)
+        states_batch = torch.tensor(np.vstack(batch.state), dtype=torch.float32)
+        actions_batch = np.array(batch.action)
+        rewards_batch = torch.tensor(batch.reward, dtype=torch.float32)
+        next_states_batch = torch.tensor(np.vstack(batch.next_state), dtype=torch.float32)
+        dones_batch = torch.tensor(batch.done, dtype=torch.int)
         with torch.no_grad():
             q_values_next_states = self.q_network(next_states_batch)
             q_targets = rewards_batch + self.gamma*torch.max(q_values_next_states, dim=1).values*dones_batch
@@ -176,6 +176,7 @@ class DQN:
         max_tau       : Int, number of iterations between two consecutive updates of the target network.
         thresh        : Float, lower bound on the average of the last 10 training episodes above which early stopping is activated.
         file_save     : String, name of the file containingt the saved network weights.
+        print_iter    : Int, number of episodes between two consecutive prints.
         
         Returns
         --------------
@@ -196,12 +197,7 @@ class DQN:
                 rewards.append(reward_episode)
 
             else:
-                if reward_mean is None:
-                    reward_mean = np.mean(rewards)
-
-                else:
-                    reward_mean += (reward_episode - rewards[0])/rewards.maxlen
-
+                reward_mean = np.mean(rewards) if reward_mean is None else reward_mean + (reward_episode - rewards[0])/rewards.maxlen
                 rewards.append(reward_episode)
                 if reward_mean >= thresh:
                     print('Early stopping achieved after %d episodes' %episode)
@@ -249,7 +245,7 @@ class DQN:
                 print('Episode : %d, length : %d, return : %.3F' %(episode, n_steps, R))
 
         return_avg, return_std = returns.mean(), returns.std()
-        print('avg : %.3f, std : %.3f' %(return_avg, return_std))
+        print('mean : %.3f, std : %.3f' %(return_avg, return_std))
         return return_avg, return_std
             
     def save_gif(self, env, file_name, n_episodes=1, duration=40):
@@ -261,6 +257,8 @@ class DQN:
         Arguments
         --------------
         env        : gym environment.
+        file_name  : String, path where to save the test gifs.
+        n_episodes : Int, number of test episodes.
         
         Returns
         --------------

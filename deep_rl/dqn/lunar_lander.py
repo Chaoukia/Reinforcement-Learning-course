@@ -1,6 +1,6 @@
 import argparse
 import gymnasium as gym
-from agents import MountainCarDQN
+from agents import LunarLanderDQN
 from time import time
 
 if __name__ == '__main__':
@@ -17,8 +17,8 @@ if __name__ == '__main__':
     argparser.add_argument('--n_learn', type=int, default=10, help="Number of iterations between two consecutive network updates.")
     argparser.add_argument('--batch_size', type=int, default=64, help="Batch size.")
     argparser.add_argument('--lr', type=float, default=1e-3, help="Learning rate.")
-    argparser.add_argument('--thresh', type=float, default=-130, help="Minimum mean reward to stop training.")
-    argparser.add_argument('--file_save', type=str, default='mountain_car_dqn.pth', help="Path where to save the network weights.")
+    argparser.add_argument('--thresh', type=float, default=250, help="Minimum mean reward to stop training.")
+    argparser.add_argument('--file_save', type=str, default='weights/lunar_lander_dqn.pth', help="Path where to save the network weights.")
     argparser.add_argument('--n_test', type=int, default=10, help="Number of test episodes.")
     argparser.add_argument('--verbose', type=int, default=1, help="Whether to print each episode evaluation during the test phase.")
     argparser.add_argument('--save_gif', type=int, default=0, help="If 1, save gif of the tested agent, 0 otherwise.")
@@ -26,20 +26,20 @@ if __name__ == '__main__':
     args = argparser.parse_args()
 
     # Train.
-    env = gym.make("MountainCar-v0")
-    agent = MountainCarDQN(env, args.gamma, args.max_size)
+    env = gym.make("LunarLander-v3", continuous=False, gravity=-10.0,enable_wind=False, wind_power=0.0, turbulence_power=0.0)
+    agent = LunarLanderDQN(env, args.gamma, args.max_size)
     start_time = time()
     agent.train(n_episodes=args.n_train, n_pretrain=args.n_pretrain, epsilon_start=args.epsilon_start, epsilon_stop=args.epsilon_stop, decay_rate=args.decay_rate, 
                 n_learn=args.n_learn, batch_size=args.batch_size, lr=args.lr, thresh=args.thresh, file_save=args.file_save, print_iter=100)
     print('Execution time :', time() - start_time)
     
     # Test.
-    env = gym.make("MountainCar-v0", render_mode='human')
+    env = gym.make("LunarLander-v3", continuous=False, gravity=-10.0,enable_wind=False, wind_power=0.0, turbulence_power=0.0, render_mode='human')
     agent.test(env, n_episodes=args.n_test, verbose=args.verbose)
     env.close()
     
     # Save gif.
     if args.save_gif:
-        env = gym.make("MountainCar-v0", render_mode='rgb_array')
-        agent.save_gif(env, file_name='../gifs/mountain_car.gif', n_episodes=3, duration=30)
+        env = gym.make("LunarLander-v3", continuous=False, gravity=-10.0,enable_wind=False, wind_power=0.0, turbulence_power=0.0, render_mode='rgb_array')
+        agent.save_gif(env, file_name='../../gifs/lunar-lander.gif', n_episodes=3, duration=30)
         env.close()
