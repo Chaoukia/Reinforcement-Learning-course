@@ -8,11 +8,11 @@ class LunarLanderDQN(DQN):
     Class describing an DQN LunarLander agent.
     """
 
-    def __init__(self, env, gamma=0.99, max_size=500000):
+    def __init__(self, env, gamma=0.99, max_size=500000, double_learning=False):
         """
         Description
         --------------
-        Constructor of class FrozenLakeAgent.
+        Constructor of class LunarLanderDQN.
         
         Arguments
         --------------
@@ -21,21 +21,23 @@ class LunarLanderDQN(DQN):
         max_size : Int, maximum size of the replay buffer.
         """
 
-        super(LunarLanderDQN, self).__init__(env, gamma, max_size)
+        super(LunarLanderDQN, self).__init__(env, gamma, max_size, double_learning)
         self.q_network = LunarLanderNetwork()
+        self.q_network_target = LunarLanderNetwork()
+        self.update_q_network_target()
 
 class CartPoleDQN(DQN):
     """
     Description
     --------------
-    Class describing an DQN LunarLander agent.
+    Class describing an DQN CartPoleDQN agent.
     """
 
-    def __init__(self, env, gamma=0.99, max_size=500000):
+    def __init__(self, env, gamma=0.99, max_size=500000, double_learning=False):
         """
         Description
         --------------
-        Constructor of class FrozenLakeAgent.
+        Constructor of class CartPoleDQN.
         
         Arguments
         --------------
@@ -44,8 +46,10 @@ class CartPoleDQN(DQN):
         max_size : Int, maximum size of the replay buffer.
         """
 
-        super(CartPoleDQN, self).__init__(env, gamma, max_size)
+        super(CartPoleDQN, self).__init__(env, gamma, max_size, double_learning)
         self.q_network = CartPoleNetwork()
+        self.q_network_target = CartPoleNetwork()
+        self.update_q_network_target()
 
 class MountainCarDQN(DQN):
     """
@@ -54,7 +58,7 @@ class MountainCarDQN(DQN):
     Class describing an DQN LunarLander agent.
     """
 
-    def __init__(self, env, gamma=0.99, max_size=500000):
+    def __init__(self, env, gamma=0.99, max_size=500000, double_learning=False):
         """
         Description
         --------------
@@ -67,8 +71,10 @@ class MountainCarDQN(DQN):
         max_size : Int, maximum size of the replay buffer.
         """
 
-        super(MountainCarDQN, self).__init__(env, gamma, max_size)
+        super(MountainCarDQN, self).__init__(env, gamma, max_size, double_learning)
         self.q_network = MountainCarNetwork()
+        self.q_network_target = MountainCarNetwork()
+        self.update_q_network_target()
 
 class AcrobotDQN(DQN):
     """
@@ -77,7 +83,7 @@ class AcrobotDQN(DQN):
     Class describing an DQN LunarLander agent.
     """
 
-    def __init__(self, env, gamma=0.99, max_size=500000):
+    def __init__(self, env, gamma=0.99, max_size=500000, double_learning=False):
         """
         Description
         --------------
@@ -90,5 +96,7 @@ class AcrobotDQN(DQN):
         max_size : Int, maximum size of the replay buffer.
         """
 
-        super(AcrobotDQN, self).__init__(env, gamma, max_size)
+        super(AcrobotDQN, self).__init__(env, gamma, max_size, double_learning)
         self.q_network = AcrobotNetwork()
+        self.q_network_target = AcrobotNetwork()
+        self.update_q_network_target()

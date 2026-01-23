@@ -43,12 +43,6 @@ class Memory:
         """
 
         self.buffer.append((state, action, reward, next_state, done))
-        
-        # self.buffer.append((torch.from_numpy(state.reshape((1, -1))), [action], torch.tensor([reward], dtype=torch.float32), 
-        #                     torch.from_numpy(next_state.reshape((1, -1))), torch.tensor([done], dtype=torch.int)))
-        
-        # self.buffer.append((torch.from_numpy(np.expand_dims(state, axis=0)).to(torch.float32), [action], torch.tensor([reward], dtype=torch.float32), 
-        #                     torch.from_numpy(np.expand_dims(next_state, axis=0)).to(torch.float32), torch.tensor([done], dtype=torch.int)))
     
     def sample(self, batch_size):
         """
