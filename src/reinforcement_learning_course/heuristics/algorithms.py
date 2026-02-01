@@ -1,12 +1,14 @@
 import numpy as np
+import heapq
 from reinforcement_learning_course.core import Agent
 from gymnasium import Env
+from typing import List
 
 
 class Astar(Agent[int, int]):
     """
     Description
-    --------------
+    --------------------------------------------
     Class describing the A* algorithm.
     """
 
@@ -18,58 +20,72 @@ class Astar(Agent[int, int]):
 
         Parameters & Attributes
         --------------------------------------------
-        env                      : gymnasium environment Wrapper
-        make_transition_matrices : function generating the transirion matrices.
-        gamma                    : Float in [0, 1] generally close to 1, discount factor.
-        p_transition             : np.array of shape (n_state, n_actions, n_states), transition probabilities matrix.
-        r_transition             : np.array of shape (n_state, n_actions, n_states), transition rewards matrix.
-        n_states                 : Int, number of states.
-        n_actions                : Int, number of n_actions.
-        policy                   : np.array of shape (n_states,), the policy function.
-        value                    : np.array of shape (n_states,), the state value function.
+        env       : gymnasium environment Wrapper.
+        gamma     : Float in [0, 1] generally close to 1, discount factor.
+        n_states  : Int, number of states.
+        n_actions : Int, number of n_actions.
+        policy    : np.array of shape (n_states,), the policy function.
+        goals     : Set of goal states.
 
         Returns
         --------------------------------------------
         """
 
         super().__init__(env, gamma)
-        self.p_transition, self.r_transition, self.n_states, self.n_actions = self.make_transition_matrices()
+        self.env = env
+        self.n_states = env.observation_space.n
+        self.n_actions = env.action_space.n
         self.policy = np.zeros(self.n_states, dtype=int)
-        self.value = np.zeros(self.n_states)
+        self.goals = None
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Description
-        --------------
+        --------------------------------------------
         Reinitialize the policy.
 
-        Arguments
-        --------------
+        Parameters
+        --------------------------------------------
 
         Returns
-        --------------
+        --------------------------------------------
         """
 
-        self.policy = np.zeros(self.n_states).astype(int)
+        self.policy = np.zeros(self.n_states, dtype=int)
 
-    def heuristic(self, state):
+    def set_n_states_actions(self) -> None:
         """
         Description
-        --------------
+        --------------------------------------------
+        Set the number of states and actions,
+
+        Parameters
+        --------------------------------------------
+
+        Returns
+        --------------------------------------------
+        """
+
+        raise NotImplementedError
+
+    def heuristic(self, state: int) -> float:
+        """
+        Description
+        --------------------------------------------
         Return an upper bound on the optimal value at state.
 
         Arguments
-        --------------
-        state : Int, a state
+        --------------------------------------------
+        state : Int, a state.
 
         Returns
-        --------------
+        --------------------------------------------
         Float, the heuristic value of state.
         """
 
         raise NotImplementedError
 
-    def split(self, state, action):
+    def split(self, state: int, action: int) -> tuple[float, int]:
         """
         Description
         --------------
@@ -88,11 +104,11 @@ class Astar(Agent[int, int]):
 
         raise NotImplementedError
 
-    def expand(self, info_state):
+    def expand(self, info_state: List) -> List:
         """
         Description
         --------------
-        Expand a state by returning the states that stem from it by taking each possible action.
+        Expand a state to the states that stem from it by taking each possible action.
 
         Arguments
         --------------
@@ -123,15 +139,14 @@ class Astar(Agent[int, int]):
 
         return info_children
     
-    def train(self, root):
+    def train(self) -> None:
         """
         Description
         --------------
         Run the A* algorithm to find the optimal policy inducing the path of maximum reward from an initial state (root) to a goal state.
 
-        Arguments
+        Parameters
         --------------
-        root : Int, Initial state.
 
         Returns
         --------------
@@ -141,6 +156,7 @@ class Astar(Agent[int, int]):
 
         memo = {}
         queue = []
+        root, _ = self.env.reset()
         info_root = [0, 0, [], root]
         memo[root] = info_root
         heapq.heappush(queue, info_root)
@@ -178,7 +194,7 @@ class Astar(Agent[int, int]):
 
         print('The problem is unsolvable.')
 
-    def infer(self, root, actions):
+    def infer(self, root: int, actions: List) -> None:
         """
         Description
         --------------
@@ -219,72 +235,3 @@ class Astar(Agent[int, int]):
         
         return self.policy[state]
     
-    def test(self, env, n_episodes=1000, verbose=False):
-        """
-        Description
-        --------------
-        Test the agent.
-        
-        Arguments
-        --------------
-        env        : gymnasium environment.
-        n_episodes : Int, number of test episodes.
-        verbose    : Boolean, if True, print the episode index and its corresponding length and return.
-        
-        Returns
-        --------------
-        """
-        
-        returns = np.empty(n_episodes)
-        for episode in range(n_episodes):
-            state, _ = env.reset()
-            done = False
-            R = 0
-            n_steps = 0
-            while not done:
-                action = self.action(state)
-                next_state, reward, terminated, truncated, _ = env.step(action)
-                done = (terminated or truncated)
-                state = next_state
-                R += reward
-                n_steps += 1
-                
-            returns[episode] = R
-            if verbose:
-                print('Episode : %d, length : %d, return : %.3F' %(episode, n_steps, R))
-
-        return_avg, return_std = returns.mean(), returns.std()
-        print('avg : %.3f, std : %.3f' %(return_avg, return_std))
-        return return_avg, return_std
-            
-    def save_gif(self, env, file_name):
-        """
-        Description
-        --------------
-        Test the agent and save a gif.
-        
-        Arguments
-        --------------
-        env       : gymnasium environment.
-        file_name : String, path to the saved gif.
-        
-        Returns
-        --------------
-        """
-        
-        frames = []
-        state, _ = env.reset()
-        done = False
-        R = 0
-        n_steps = 0
-        while not done:
-            frames.append(Image.fromarray(env.render(), mode='RGB'))
-            action = self.action(state)
-            next_state, reward, terminated, truncated, _ = env.step(action)
-            done = (terminated or truncated)
-            state = next_state
-            R += reward
-            n_steps += 1
-        
-        frames.append(Image.fromarray(env.render(), mode='RGB'))
-        frames[0].save(file_name, save_all=True, append_images=frames[1:], optimize=False, duration=150, loop=0)
