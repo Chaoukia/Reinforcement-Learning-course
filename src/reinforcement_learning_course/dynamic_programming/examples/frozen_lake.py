@@ -8,7 +8,7 @@ if __name__ == '__main__':
     argparser = argparse.ArgumentParser(description='Parse options')
     
     argparser.add_argument('--map_name', type=str, choices=['4x4', '8x8'], default='4x4', help="Map grid, either 8x8 or 4x4.")
-    argparser.add_argument('--gamma', type=float, default=0.9, help="Discount factor of the MDP.")
+    argparser.add_argument('--gamma', type=float, default=0.99, help="Discount factor of the MDP.")
     argparser.add_argument('--algorithm', type=str, choices=['value_iteration', 'q_iteration', 'policy_iteration'], default='value_iteration', help="Dynamic Programming algorithm to use {value_iteration, q_iteration, policy_iteration}.")
     argparser.add_argument('--epsilon', type=float, default=1e-12, help="Discount factor of the MDP.")
     argparser.add_argument('--n_train', type=int, default=1000, help="Number of training episodes.")

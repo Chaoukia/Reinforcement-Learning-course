@@ -7,9 +7,7 @@ from typing import List
 
 class Astar(Agent[int, int]):
     """
-    Description
-    --------------------------------------------
-    Class describing the A* algorithm.
+    A* algorithm.
     """
 
     def __init__(self, env: Env[int, int], gamma: float = 1.0) -> None:
