@@ -1,7 +1,6 @@
 import argparse
 import gymnasium as gym
-from reinforcement_learning_course.dynamic_programming import algorithms as algs
-from reinforcement_learning_course.dynamic_programming.utils import cliff_walking_transition_matrices
+from reinforcement_learning_course.dynamic_programming.examples import agents
 from time import time
 
 if __name__ == '__main__':
@@ -23,13 +22,13 @@ if __name__ == '__main__':
     env = gym.make('CliffWalking-v1', max_episode_steps=args.max_steps)
     start_time = time()
     if args.algorithm == 'value_iteration':
-        agent = algs.ValueIteration(env, cliff_walking_transition_matrices, args.gamma)
+        agent = agents.ValueIterationCliffWalking(env, args.gamma)
         
     elif args.algorithm == 'q_iteration':
-        agent = algs.QIteration(env, cliff_walking_transition_matrices, args.gamma)
+        agent = agents.QIterationCliffWalking(env, args.gamma)
         
     elif args.algorithm == 'policy_iteration':
-        agent = algs.PolicyIteration(env, cliff_walking_transition_matrices, args.gamma)
+        agent = agents.PolicyIterationCliffWalking(env, args.gamma)
 
     agent.train(args.n_train, args.epsilon)
     print('Execution time :', time() - start_time)

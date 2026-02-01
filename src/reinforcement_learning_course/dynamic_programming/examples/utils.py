@@ -2,11 +2,11 @@ import numpy as np
 from gymnasium.core import Env
 
 
-def frozen_lake_transition_matrices(env: Env[int, int]) -> tuple[np.array, np.array, int, int]:
+def frozen_lake_transition_matrices(env: Env[int, int]) -> tuple[np.array, np.array]:
     """
     Description
     ------------------------------
-    Generate the probability and reward transition matrices.
+    Generate the probability and reward transition matrices for the frozen lake environment.
 
     Parameters
     ------------------------------
@@ -16,6 +16,8 @@ def frozen_lake_transition_matrices(env: Env[int, int]) -> tuple[np.array, np.ar
     ------------------------------
     p_transition : np.array of shape (n_state, n_actions, n_states), the transition probabilities matrix.
     r_transition : np.array of shape (n_state, n_actions, n_states), the transition rewards matrix.
+    n_states     : Int, number of states.
+    n_actions    : Int, number of actions.
     """
 
     n_states, n_actions = env.observation_space.n, env.action_space.n
@@ -112,14 +114,14 @@ def frozen_lake_transition_matrices(env: Env[int, int]) -> tuple[np.array, np.ar
                     if map[next_state_index] == 'G':
                         r_transition[state, action, next_state] = 1
 
-    return p_transition, r_transition, n_states, n_actions
+    return p_transition, r_transition
 
 
-def cliff_walking_transition_matrices(env: Env[int, int]) -> tuple[np.array, np.array, int, int]:
+def cliff_walking_transition_matrices(env: Env[int, int]) -> tuple[np.array, np.array]:
     """
     Description
     ------------------------------
-    Generate the probability and reward transition matrices.
+    Generate the probability and reward transition matrices for the cliff walking environment
 
     Parameters
     ------------------------------
@@ -129,6 +131,8 @@ def cliff_walking_transition_matrices(env: Env[int, int]) -> tuple[np.array, np.
     ------------------------------
     p_transition : np.array of shape (n_state, n_actions, n_states), the transition probabilities matrix.
     r_transition : np.array of shape (n_state, n_actions, n_states), the transition rewards matrix.
+    n_states     : Int, number of states.
+    n_actions    : Int, number of actions.
     """
     
     n_states, n_actions = env.observation_space.n, env.action_space.n
@@ -174,14 +178,14 @@ def cliff_walking_transition_matrices(env: Env[int, int]) -> tuple[np.array, np.
                     if next_state_index[0] == 3 and next_state_index[1] in set(range(1, 11)):
                         r_transition[state, action, next_state] = -100
                     
-    return p_transition, r_transition, n_states, n_actions
+    return p_transition, r_transition
 
 
-def taxi_transition_matrices(env: Env[int, int]) -> tuple[np.array, np.array, int, int]:
+def taxi_transition_matrices(env: Env[int, int]) -> tuple[np.array, np.array]:
     """
     Description
     ------------------------------
-    Generate the probability and reward transition matrices.
+    Generate the probability and reward transition matrices for the taxi enviromnent.
 
     Parameters
     ------------------------------
@@ -191,6 +195,8 @@ def taxi_transition_matrices(env: Env[int, int]) -> tuple[np.array, np.array, in
     ------------------------------
     p_transition : np.array of shape (n_state, n_actions, n_states), the transition probabilities matrix.
     r_transition : np.array of shape (n_state, n_actions, n_states), the transition rewards matrix.
+    n_states     : Int, number of states.
+    n_actions    : Int, number of actions.
     """
 
     n_states, n_actions = env.observation_space.n + 1, env.action_space.n
@@ -246,4 +252,4 @@ def taxi_transition_matrices(env: Env[int, int]) -> tuple[np.array, np.array, in
                     else:
                         r_transition[state, action, n_states - 1] = -10
                     
-    return p_transition, r_transition, n_states, n_actions
+    return p_transition, r_transition

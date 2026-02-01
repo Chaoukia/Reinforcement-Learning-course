@@ -1,7 +1,6 @@
 import argparse
 import gymnasium as gym
-from reinforcement_learning_course.dynamic_programming import algorithms as algs
-from reinforcement_learning_course.dynamic_programming.utils import frozen_lake_transition_matrices
+from reinforcement_learning_course.dynamic_programming.examples import agents
 from time import time
 
 if __name__ == '__main__':
@@ -23,13 +22,13 @@ if __name__ == '__main__':
     env = gym.make('FrozenLake-v1', is_slippery=True, map_name=args.map_name)
     start_time = time()
     if args.algorithm == 'value_iteration':
-        agent = algs.ValueIteration(env, frozen_lake_transition_matrices, args.gamma)
+        agent = agents.ValueIterationFrozenLake(env, args.gamma)
         
     elif args.algorithm == 'q_iteration':
-        agent = algs.QIteration(env, frozen_lake_transition_matrices, args.gamma)
+        agent = agents.QIterationFrozenLake(env, args.gamma)
         
     elif args.algorithm == 'policy_iteration':
-        agent = algs.PolicyIteration(env, frozen_lake_transition_matrices, args.gamma)
+        agent = agents.PolicyIterationFrozenLake(env, args.gamma)
 
     agent.train(args.n_train, args.epsilon)
     print('Execution time :', time() - start_time)

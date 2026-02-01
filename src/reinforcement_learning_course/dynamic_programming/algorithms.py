@@ -1,8 +1,6 @@
 import numpy as np
 from reinforcement_learning_course.core import Agent
-from reinforcement_learning_course.dynamic_programming import utils
 from gymnasium import Env
-from typing import Callable
 
 
 class ValueIteration(Agent[int, int]):
@@ -10,9 +8,7 @@ class ValueIteration(Agent[int, int]):
     Value Iteration algorithm.
     """
 
-    def __init__(self, env: Env[int, int], 
-                 make_transition_matrices: Callable[[Env[int, int]], tuple[np.array, np.array, int, int]], 
-                 gamma: float = 1.0) -> None:
+    def __init__(self, env: Env[int, int], gamma: float = 1.0) -> None:
         """
         Description
         --------------------------------------------
@@ -35,7 +31,8 @@ class ValueIteration(Agent[int, int]):
         """
 
         super().__init__(env, gamma)
-        self.p_transition, self.r_transition, self.n_states, self.n_actions = make_transition_matrices(env)
+        self.n_states, self.n_actions = self.set_n_states_actions()
+        self.p_transition, self.r_transition = self.make_transition_matrices()
         self.policy = np.zeros(self.n_states, dtype=int)
         self.value = np.zeros(self.n_states)
 
@@ -46,28 +43,45 @@ class ValueIteration(Agent[int, int]):
         Reset the agent's value and policy.
 
         Parameters
-        ----------------------
+        --------------------------------------------
 
         Returns
-        ----------------------
+        --------------------------------------------
         """
 
         self.value = np.zeros(self.n_states)
         self.policy = np.zeros(self.n_states, dtype=int)
-    
-    def make_transition_matrices(self):
+
+    def set_n_states_actions(self) -> tuple[int, int]:
         """
         Description
-        --------------
+        --------------------------------------------
+        Define the number of states and actions.
+
+        Parameters
+        --------------------------------------------
+
+        Returns
+        --------------------------------------------
+        """
+
+        raise NotImplementedError
+    
+    def make_transition_matrices(self) -> tuple[np.array, np.array]:
+        """
+        Description
+        --------------------------------------------
         Construct p_transition and r_transition the probability and reward transition matrices (respectively).
         
         Parameters
-        --------------
+        --------------------------------------------
         
         Returns
-        --------------
+        --------------------------------------------
         p_transition : np.array of shape (n_state, n_actions, n_states), the transition probabilities matrix.
         r_transition : np.array of shape (n_state, n_actions, n_states), the transition rewards matrix.
+        n_states     : Int, number of states.
+        n_actions    : Int, number of actions.
         """
         
         raise NotImplementedError
@@ -125,9 +139,7 @@ class QIteration(Agent[int, int]):
     Q-Iteration algorithm.
     """
 
-    def __init__(self, env: Env[int, int], 
-                 make_transition_matrices: Callable[[Env[int, int]], tuple[np.array, np.array, int, int]], 
-                 gamma: float = 1.0) -> None:
+    def __init__(self, env: Env[int, int], gamma: float = 1.0) -> None:
         """
         Description
         --------------------------------------------
@@ -149,7 +161,8 @@ class QIteration(Agent[int, int]):
         """
 
         super().__init__(env, gamma)
-        self.p_transition, self.r_transition, self.n_states, self.n_actions = make_transition_matrices(env)
+        self.n_states, self.n_actions = self.set_n_states_actions()
+        self.p_transition, self.r_transition = self.make_transition_matrices()
         self.policy = np.zeros(self.n_states, dtype=int)
         self.q_value = np.zeros((self.n_states, self.n_actions))
 
@@ -168,6 +181,38 @@ class QIteration(Agent[int, int]):
 
         self.q_value = np.zeros((self.n_states, self.n_actions))
         self.policy = np.zeros(self.n_states, dtype=int)
+
+    def set_n_states_actions(self) -> tuple[int, int]:
+        """
+        Description
+        --------------------------------------------
+        Define the number of states and actions.
+
+        Parameters
+        --------------------------------------------
+
+        Returns
+        --------------------------------------------
+        """
+
+        raise NotImplementedError
+
+    def make_transition_matrices(self) -> tuple[np.array, np.array, int, int]:
+        """
+        Description
+        --------------
+        Construct p_transition and r_transition the probability and reward transition matrices (respectively).
+        
+        Parameters
+        --------------
+        
+        Returns
+        --------------
+        p_transition : np.array of shape (n_state, n_actions, n_states), the transition probabilities matrix.
+        r_transition : np.array of shape (n_state, n_actions, n_states), the transition rewards matrix.
+        """
+        
+        raise NotImplementedError
 
     def action(self, state: int) -> int:
         """
@@ -218,15 +263,14 @@ class QIteration(Agent[int, int]):
             
         self.policy = self.q_value.argmax(axis=-1)
         print('The termination condition has not been achieved after %d iterations.' %i)
+        
 
 class PolicyIteration(Agent[int, int]):
     """
     Policy Iteration algorithm.
     """
 
-    def __init__(self, env: Env[int, int], 
-                 make_transition_matrices: Callable[[Env[int, int]], tuple[np.array, np.array, int, int]], 
-                 gamma: float = 1.0) -> None:
+    def __init__(self, env: Env[int, int], gamma: float = 1.0) -> None:
         """
         Description
         --------------------------------------------
@@ -248,7 +292,8 @@ class PolicyIteration(Agent[int, int]):
         """
 
         super().__init__(env, gamma)
-        self.p_transition, self.r_transition, self.n_states, self.n_actions = make_transition_matrices(env)
+        self.n_states, self.n_actions = self.set_n_states_actions()
+        self.p_transition, self.r_transition = self.make_transition_matrices()
         self.policy = np.zeros(self.n_states, dtype=int)
         self.value = np.zeros(self.n_states)
 
@@ -267,6 +312,38 @@ class PolicyIteration(Agent[int, int]):
 
         self.value = np.zeros(self.n_states)
         self.policy = np.zeros(self.n_states, dtype=int)
+
+    def set_n_states_actions(self) -> tuple[int, int]:
+        """
+        Description
+        --------------------------------------------
+        Define the number of states and actions.
+
+        Parameters
+        --------------------------------------------
+
+        Returns
+        --------------------------------------------
+        """
+
+        raise NotImplementedError
+
+    def make_transition_matrices(self) -> tuple[np.array, np.array, int, int]:
+        """
+        Description
+        --------------
+        Construct p_transition and r_transition the probability and reward transition matrices (respectively).
+        
+        Parameters
+        --------------
+        
+        Returns
+        --------------
+        p_transition : np.array of shape (n_state, n_actions, n_states), the transition probabilities matrix.
+        r_transition : np.array of shape (n_state, n_actions, n_states), the transition rewards matrix.
+        """
+        
+        raise NotImplementedError
 
     def action(self, state: int) -> int:
         """
