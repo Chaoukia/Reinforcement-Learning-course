@@ -9,7 +9,7 @@ class MonteCarlo(Agent[int, int]):
     Monte-Carlo agent.
     """
 
-    def __init__(self, env: Env[int, int], gamma: float = 1.) -> None:
+    def __init__(self, env: Env[int, int], gamma: float = 0.99) -> None:
         """
         Description
         --------------------------------------------
