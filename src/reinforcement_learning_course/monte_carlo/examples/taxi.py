@@ -8,8 +8,6 @@ if __name__ == '__main__':
     argparser = argparse.ArgumentParser(description='Parse options')
 
     argparser.add_argument('--gamma', type=float, default=0.99, help="Discount factor of the MDP.")
-    argparser.add_argument('--map_name', type=str, choices=['4x4', '8x8'], default='4x4', help="Map grid, either 8x8 or 4x4.")
-    argparser.add_argument('--is_slippery', type=str, choices=['no', 'yes'], default='no', help="Whether the map is slippery or not.")
     argparser.add_argument('--first_visit', type=str, choices=['no', 'yes'], default='no', help="Whether to apply first visit MC or every visit MC.")
     argparser.add_argument('--epsilon_start', type=float, default=1., help="Initial value of epsilon.")
     argparser.add_argument('--epsilon_stop', type=float, default=0.1, help="Final value of epsilon.")
@@ -22,26 +20,25 @@ if __name__ == '__main__':
     
     args = argparser.parse_args()
 
-    is_slippery = args.is_slippery == 'yes'
     first_visit = args.first_visit == 'yes'
     verbose = args.verbose == 'yes'
 
     # Train
-    env = gym.make('FrozenLake-v1', is_slippery=is_slippery, map_name=args.map_name)
+    env = gym.make('Taxi-v3')
     start_time = time()
     agent = algs.MonteCarlo(env, args.gamma)
     agent.train(args.epsilon_start, args.epsilon_stop, args.decay_rate, args.n_train, first_visit, args.print_iter)
     print('Execution time :', time() - start_time)
     
     # Test.
-    env = gym.make('FrozenLake-v1', is_slippery=is_slippery, map_name=args.map_name, render_mode='human')
+    env = gym.make('Taxi-v3', render_mode='human')
     agent.set_env(env)
     agent.test(args.n_test, verbose=args.verbose)
     env.close()
     
     # Save gif.
     if args.path_gif is not None:
-        env = gym.make('FrozenLake-v1', is_slippery=is_slippery, map_name=args.map_name, render_mode='rgb_array')
+        env = gym.make('Taxi-v3', render_mode='rgb_array')
         agent.set_env(env)
         agent.save_gif(args.path_gif, n_episodes=1, duration=150)
         env.close()
