@@ -10,7 +10,7 @@ class TemporalDifference(Agent[int, int]):
 
     def __init__(self, env: Env[int, int], gamma: float = 0.99) -> None:
         super().__init__(env, gamma)
-        self.n_states, self.n_actions = self.set_n_states_actions()
+        self.n_actions = self.env.action_space.n
         self.q_values = {}
         self.visits = {}
 
@@ -30,23 +30,6 @@ class TemporalDifference(Agent[int, int]):
         self.q_values = {}
         self.visits = {}
 
-    def set_n_states_actions(self) -> None:
-        """
-        Description
-        --------------------------------------------
-        Set the number of states and actions.
-
-        Parameters
-        --------------------------------------------
-
-        Returns
-        --------------------------------------------
-        """
-
-        n_states = self.env.observation_space.n
-        n_actions = self.env.action_space.n
-        return n_states, n_actions
-    
     def action_explore(self, state: int, epsilon: float) -> int:
         """
         Description
@@ -273,7 +256,7 @@ class ExpectedSARSA(TemporalDifference):
             q_next_state = 0
             
         if state in self.q_values:
-            q_state = self.q_values[state]
+            q_state = self.q_values[state][action]
 
         else:
             self.q_values[state], self.visits[state] = np.zeros(self.n_actions), np.zeros(self.n_actions)
@@ -388,7 +371,7 @@ class QLearning(TemporalDifference):
             action = self.action_explore(state, epsilon)
             next_state, reward, terminated, truncated, _ = self.env.step(action)
             done = (terminated or truncated)
-            self.update_q_value(state, action, reward, next_state, alpha, epsilon)
+            self.update_q_value(state, action, reward, next_state, alpha)
             state = next_state
 
 
@@ -522,7 +505,7 @@ class DoubleQLearning(TemporalDifference):
             action = self.action_explore(state, epsilon)
             next_state, reward, terminated, truncated, _ = self.env.step(action)
             done = (terminated or truncated)
-            self.update_q_value(state, action, reward, next_state, alpha, epsilon)
+            self.update_q_value(state, action, reward, next_state, alpha)
             state = next_state
     
 
