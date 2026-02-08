@@ -33,13 +33,13 @@ if __name__ == '__main__':
     agent.train(args.n_train, args.epsilon)
     print('Execution time :', time() - start_time)
     
-    # Test.
+    # Test
     env = gym.make('FrozenLake-v1', is_slippery=True, map_name=args.map_name, render_mode='human')
     agent.set_env(env)
     agent.test(args.n_test, verbose=args.verbose)
     env.close()
     
-    # Save gif.
+    # Save gif
     if args.path_gif is not None:
         env = gym.make("FrozenLake-v1", is_slippery=True, map_name=args.map_name, render_mode='rgb_array')
         agent.set_env(env)
