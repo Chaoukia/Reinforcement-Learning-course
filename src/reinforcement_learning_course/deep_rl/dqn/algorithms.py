@@ -17,7 +17,12 @@ class DQN(Agent[np.array, int]):
     DQN agent.
     """
 
-    def __init__(self, env: Env[np.array, int], max_size: int = 1e5, gamma: float = 0.99) -> None:
+    def __init__(self, 
+                 env: Env[np.array, int], 
+                 max_size: int = 1e5, 
+                 gamma: float = 0.99, 
+                 double_learning: bool = False
+                 ) -> None:
         """
         Description
         ------------------------------
@@ -34,6 +39,7 @@ class DQN(Agent[np.array, int]):
 
         super().__init__(env, gamma)
         self.max_size = max_size
+        self.double_learning = double_learning
         self.q_network, self.q_network_target = self.make_networks()
         self.buffer = Memory(max_size)
 
@@ -143,7 +149,14 @@ class DQN(Agent[np.array, int]):
         q_values = q_values_states[np.arange(batch_size), actions_batch]
         with torch.no_grad(): 
             q_values_next_states = self.q_network_target(next_states_batch)
-            q_targets = rewards_batch + self.gamma*torch.max(q_values_next_states, dim=1).values*dones_batch
+            # DQN targets
+            if not self.double_learning:
+                q_targets = rewards_batch + self.gamma*torch.max(q_values_next_states, dim=1).values*dones_batch
+
+            # Double DQN target.
+            else:
+                actions_max = torch.argmax(q_values_states, dim=1)
+                q_targets = rewards_batch + self.gamma*q_values_next_states[np.arange(batch_size), actions_max]*dones_batch
 
         loss = F.mse_loss(q_values, q_targets)
         writer.add_scalar('loss', loss.item(), it)
@@ -336,6 +349,4 @@ class DQN(Agent[np.array, int]):
         """
         
         self.q_network.load_state_dict(torch.load(path))
-
-
 

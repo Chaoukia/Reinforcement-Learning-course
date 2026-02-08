@@ -9,6 +9,7 @@ from reinforcement_learning_course.deep_rl.dqn.examples.neural_networks import (
 )
 from gymnasium import Env
 
+
 class LunarLanderDQN(DQN):
     """
     DQN LunarLander agent.
@@ -17,7 +18,8 @@ class LunarLanderDQN(DQN):
     def __init__(self, 
                  env: Env[np.array, int], 
                  max_size: int = 100000, 
-                 gamma: float = 0.99
+                 gamma: float = 0.99, 
+                 double_learning: bool = False
                  ) -> None:
         """
         Description
@@ -33,7 +35,7 @@ class LunarLanderDQN(DQN):
         Returns
         ------------------------------
         """
-        super().__init__(env, max_size, gamma)
+        super().__init__(env, max_size, gamma, double_learning)
 
     def make_networks(self) -> tuple[nn.Module, nn.Module]:
         """
@@ -54,7 +56,7 @@ class LunarLanderDQN(DQN):
         q_network_target = LunarLanderNetwork()
         q_network_target.load_state_dict(q_network.state_dict())
         return q_network, q_network_target
-    
+        
 
 class CartPoleDQN(DQN):
     """
@@ -64,7 +66,8 @@ class CartPoleDQN(DQN):
     def __init__(self, 
                  env: Env[np.array, int], 
                  max_size: int = 500000, 
-                 gamma: float = 0.99
+                 gamma: float = 0.99, 
+                 double_learning: bool = False
                  ) -> None:
         """
         Description
@@ -80,7 +83,7 @@ class CartPoleDQN(DQN):
         Returns
         ------------------------------
         """
-        super().__init__(env, max_size, gamma)
+        super().__init__(env, max_size, gamma, double_learning)
 
     def make_networks(self) -> tuple[nn.Module, nn.Module]:
         """
@@ -111,7 +114,8 @@ class MountainCarDQN(DQN):
     def __init__(self, 
                  env: Env[np.array, int], 
                  max_size: int = 500000, 
-                 gamma: float = 0.99
+                 gamma: float = 0.99, 
+                 double_learning: bool = False
                  ) -> None:
         """
         Description
@@ -127,7 +131,7 @@ class MountainCarDQN(DQN):
         Returns
         ------------------------------
         """
-        super().__init__(env, max_size, gamma)
+        super().__init__(env, max_size, gamma, double_learning)
 
     def make_networks(self) -> tuple[nn.Module, nn.Module]:
         """
@@ -158,7 +162,8 @@ class AcrobotDQN(DQN):
     def __init__(self, 
                  env: Env[np.array, int], 
                  max_size: int = 500000, 
-                 gamma: float = 0.99
+                 gamma: float = 0.99, 
+                 double_learning: bool = False
                  ) -> None:
         """
         Description
@@ -174,7 +179,7 @@ class AcrobotDQN(DQN):
         Returns
         ------------------------------
         """
-        super().__init__(env, max_size, gamma)
+        super().__init__(env, max_size, gamma, double_learning)
 
     def make_networks(self) -> tuple[nn.Module, nn.Module]:
         """

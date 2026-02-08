@@ -9,7 +9,7 @@ if __name__ == '__main__':
     
     argparser.add_argument('--gamma', type=float, default=0.99, help="Discount factor of the MDP.")
     argparser.add_argument('--max_size', type=int, default=100000, help="Maximum size of the replay buffer.")
-    # argparser.add_argument('--double_learning', type=int, default=0, help="Whether to use te Double DQN targets or not.")
+    argparser.add_argument('--double_learning', type=str, choices=['yes', 'no'], default='no', help="Whether to use Double DQN or not.")
     argparser.add_argument('--n_pretrain', type=int, default=64, help="Number of episodes in the pretraining phase.")
     argparser.add_argument('--epsilon_start', type=float, default=1, help="Initial value of epsilon.")
     argparser.add_argument('--epsilon_stop', type=float, default=0.1, help="Final value of epsilon.")
@@ -27,10 +27,12 @@ if __name__ == '__main__':
     
     args = argparser.parse_args()
 
+    double_learning = args.double_learning == 'yes'
+
     # Train
     env = env = gym.make("MountainCar-v0")
     start_time = time()
-    agent = agents.MountainCarDQN(env, args.max_size, args.gamma)
+    agent = agents.MountainCarDQN(env, args.max_size, args.gamma, double_learning)
     start_time = time()
     agent.train(n_episodes=args.n_train, n_pretrain=args.n_pretrain, epsilon_start=args.epsilon_start, epsilon_stop=args.epsilon_stop, decay_rate=args.decay_rate, 
                 n_learn=args.n_learn, tau=args.tau, batch_size=args.batch_size, lr=args.lr, thresh=args.thresh, log_dir=args.log_dir, print_iter=100)
