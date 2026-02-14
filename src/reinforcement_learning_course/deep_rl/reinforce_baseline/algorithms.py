@@ -1,4 +1,6 @@
 import numpy as np
+import os
+from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -9,7 +11,7 @@ from reinforcement_learning_course.core import Agent
 from gymnasium import Env
 
 
-class Reinforce(Agent[np.array, int]):
+class ReinforceBaseline(Agent[np.array, int]):
     """
     Reinforce agent.
     """
@@ -29,13 +31,13 @@ class Reinforce(Agent[np.array, int]):
         -------------------------------
         """
         super().__init__(env, gamma)
-        self.policy_network = self.make_networks()
+        self.policy_network, self.value_network = self.make_networks()
 
-    def make_networks(self) -> nn.Module:
+    def make_networks(self) -> tuple[nn.Module, nn.Module]:
         """
         Description
         -------------------------------
-        Initialize the policy network.
+        Initialize the policy network and value networks.
 
         Parameters
         -------------------------------
@@ -82,7 +84,7 @@ class Reinforce(Agent[np.array, int]):
 
         Returns
         -------------------
-        action         : Int, action taken by the policy.
+        action : Int, action taken by the policy.
         """
 
         with torch.no_grad():
@@ -132,8 +134,9 @@ class Reinforce(Agent[np.array, int]):
               rewards: list[float], 
               entropies: list[torch.tensor], 
               alpha_entropy: float, 
-              optimizer: optim
-              ) -> tuple[torch.tensor, torch.tensor, torch.tensor]:
+              optimizer_policy: optim, 
+              optimizer_value: optim
+              ) -> tuple[torch.tensor, torch.tensor, torch.tensor, torch.tensor]:
         """
         Description
         -------------------
@@ -149,26 +152,33 @@ class Reinforce(Agent[np.array, int]):
 
         Returns
         -------------------
-        loss_policy  : torch.tensor, the loss term corresponding to improving the policy.
-        loss_entropy : torch.tensor, the loss term corresponding to maximising the entropy of the policy.
-        loss         : torch.tensor, the global loss term.
+        loss_policy  : Float, the loss term corresponding to improving the policy.
+        loss_entropy : Float, the loss term corresponding to maximising the entropy of the policy.
+        loss         : Float, the global loss term.
+        loss_value   : Float, the loss term for the value.
         """
 
         R = 0
-        optimizer.zero_grad()
+        optimizer_policy.zero_grad()
+        optimizer_value.zero_grad()
         for t in range(len(states)-1, -1, -1):
             R = rewards[t] + self.gamma*R
-            loss_policy = -self.gamma**t*R*actions_logprobs[t]
+            delta = R - self.value_network(torch.from_numpy(states[t]))
+            loss_policy = -self.gamma**t*delta.detach()*actions_logprobs[t]
             loss_entropy = -entropies[t]
             loss = loss_policy + alpha_entropy*loss_entropy
             loss.backward()
+            loss_value = delta**2
+            loss_value.backward()
 
-        optimizer.step()
-        return loss_policy, loss_entropy, loss
+        optimizer_policy.step()
+        optimizer_value.step()
+        return loss_policy.item(), loss_entropy.item(), loss.item(), loss_value.item()
 
     def train(self, 
               n_episodes: int = 1000, 
-              lr: float = 1e-4, 
+              lr_policy: float = 1e-4, 
+              lr_value: float = 1e-4, 
               alpha_entropy: float = 0.1, 
               thresh: float = 250, 
               log_dir: str = 'runs/', 
@@ -181,27 +191,30 @@ class Reinforce(Agent[np.array, int]):
         
         Arguments
         --------------
-        n_episodes    : Int, number of episodes in training phase.
-        lr            : Float, learning rate.
-        thresh        : Float, lower bound on the average of the last 10 training episodes above which early stopping is activated.
-        file_save     : String, name of the file containingt the saved network weights.
-        print_iter    : Int, number of episodes between two consecutive prints.
+        n_episodes : Int, number of episodes in training phase.
+        lr_policy  : Float, learning rate for the policy network.
+        lr_value   : Float, learning rate for the value network.
+        thresh     : Float, lower bound on the average of the last 10 training episodes above which early stopping is activated.
+        file_save  : String, name of the file containingt the saved network weights.
+        print_iter : Int, number of episodes between two consecutive prints.
         
         Returns
         --------------
         """
 
-        optimizer = optim.Adam(self.policy_network.parameters(), lr=lr)
+        optimizer_policy = optim.Adam(self.policy_network.parameters(), lr=lr_policy)
+        optimizer_value = optim.Adam(self.policy_network.parameters(), lr=lr_value)
         writer = SummaryWriter(log_dir=log_dir)
         rewards_episodes = deque(maxlen=100)
         reward_mean = None
         for episode in range(n_episodes):
             states, actions_logprobs, rewards, entropies, reward_episode = self.unroll()
-            loss_policy, loss_entropy, loss = self.learn(states, actions_logprobs, rewards, entropies, alpha_entropy, optimizer)
-            writer.add_scalar('loss_policy', loss_policy, episode)
-            writer.add_scalar('loss_entropy', loss_entropy, episode)
-            writer.add_scalar('loss', loss, episode)
-            writer.add_scalar('return', reward_episode, episode)
+            loss_policy, loss_entropy, loss, loss_value = self.learn(states, actions_logprobs, rewards, entropies, alpha_entropy, optimizer_policy, optimizer_value)
+            writer.add_scalar('Policy/loss_policy', loss_policy, episode)
+            writer.add_scalar('Policy/loss_entropy', loss_entropy, episode)
+            writer.add_scalar('Policy/loss', loss, episode)
+            writer.add_scalar('Value/loss', loss_value, episode)
+            writer.add_scalar('Return/return', reward_episode, episode)
             if len(rewards_episodes) < rewards_episodes.maxlen:
                 rewards_episodes.append(reward_episode)
 
@@ -217,35 +230,47 @@ class Reinforce(Agent[np.array, int]):
             
         print('Training finished without early stopping.')
 
-    def save(self, path: str) -> None:
+    def save(self, path: str | Path) -> None:
         """
         Description
         --------------
-        Save the weights of the policy network.
+        Save the weights of the policy and value networks.
         
         Parameters
         --------------
-        path: String, path to the weights of the policy network.
+        path : String or Path, path to the directory storing the weights of the policy and value networks.
         
         Returns
         --------------
         """
-        
-        torch.save(self.policy_network.state_dict(), path)
 
-    def load(self, path: str) -> None:
+        os.makedirs(str(path), exist_ok=True)
+        path = Path(path)
+        path_policy = path / "policy.pt"
+        path_value = path / "value.pt"
+        torch.save(self.policy_network.state_dict(), path_policy)
+        torch.save(self.policy_network.state_dict(), path_value)
+
+    def load(self, path: str | Path) -> None:
         """
         Description
         --------------
-        Load the weights of the policy network.
+        Load the weights of the policy and value networks.
         
         Parameters
         --------------
-        path: String, path to the weights of the policy network.
+        path : String or Path, path to the directory storing the weights of the policy and value networks.
         
         Returns
         --------------
         """
+
+        if not os.path.isdir(str(path)):
+            raise ValueError(f"{str(path)} is not a directory")
         
-        self.policy_network.load_state_dict(torch.load(path))
+        path = Path(path)
+        path_policy = path / "policy.pt"
+        path_value = path / "value.pt"
+        self.policy_network.load_state_dict(torch.load(path_policy))
+        self.value_network.load_state_dict(torch.load(path_value))
         
