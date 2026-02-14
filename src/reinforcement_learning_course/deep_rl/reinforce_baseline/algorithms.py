@@ -126,7 +126,7 @@ class ReinforceBaseline(Agent[np.array, int]):
             entropies.append(entropy)
             states.append(state)
 
-        return states[:-1], actions_logprobs, rewards, entropies, reward_episode
+        return states, actions_logprobs, rewards, entropies, reward_episode
     
     def learn(self, 
               states: list[np.array], 
@@ -161,17 +161,21 @@ class ReinforceBaseline(Agent[np.array, int]):
         R = 0
         optimizer_policy.zero_grad()
         optimizer_value.zero_grad()
-        for t in range(len(states)-1, -1, -1):
+        loss_policy, loss_entropy, loss_value = 0, 0, 0
+        for t in range(len(states)-2, -1, -1):
             R = rewards[t] + self.gamma*R
             delta = R - self.value_network(torch.from_numpy(states[t]))
-            loss_policy = -self.gamma**t*delta.detach()*actions_logprobs[t]
-            loss_entropy = -entropies[t]
-            loss = loss_policy + alpha_entropy*loss_entropy
-            loss.backward()
-            loss_value = delta**2
-            loss_value.backward()
-
+            loss_policy += -self.gamma**t*delta.detach()*actions_logprobs[t]
+            loss_entropy += -entropies[t]
+            loss_value += delta**2
+            
+        loss_policy /= len(states) - 1
+        loss_entropy /= len(states) - 1
+        loss = loss_policy + alpha_entropy*loss_entropy
+        loss_value /= len(states) - 1
+        loss.backward()
         optimizer_policy.step()
+        loss_value.backward()
         optimizer_value.step()
         return loss_policy.item(), loss_entropy.item(), loss.item(), loss_value.item()
 
@@ -203,7 +207,7 @@ class ReinforceBaseline(Agent[np.array, int]):
         """
 
         optimizer_policy = optim.Adam(self.policy_network.parameters(), lr=lr_policy)
-        optimizer_value = optim.Adam(self.policy_network.parameters(), lr=lr_value)
+        optimizer_value = optim.Adam(self.value_network.parameters(), lr=lr_value)
         writer = SummaryWriter(log_dir=log_dir)
         rewards_episodes = deque(maxlen=100)
         reward_mean = None

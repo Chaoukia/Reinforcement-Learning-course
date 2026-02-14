@@ -24,7 +24,7 @@ if __name__ == '__main__':
     # Train
     env = env = gym.make("Acrobot-v1")
     start_time = time()
-    agent = agents.MountainCarReinforceBaseline(env, args.gamma)
+    agent = agents.AcrobotReinforceBaseline(env, args.gamma)
     start_time = time()
     agent.train(n_episodes=args.n_train, lr_policy=args.lr_policy, lr_value=args.lr_value, alpha_entropy=args.alpha_entropy, 
                 thresh=args.thresh, log_dir=args.log_dir, print_iter=args.print_iter)

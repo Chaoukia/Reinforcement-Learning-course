@@ -124,7 +124,7 @@ class Reinforce(Agent[np.array, int]):
             entropies.append(entropy)
             states.append(state)
 
-        return states[:-1], actions_logprobs, rewards, entropies, reward_episode
+        return states, actions_logprobs, rewards, entropies, reward_episode
     
     def learn(self, 
               states: list[np.array], 
@@ -149,22 +149,25 @@ class Reinforce(Agent[np.array, int]):
 
         Returns
         -------------------
-        loss_policy  : torch.tensor, the loss term corresponding to improving the policy.
-        loss_entropy : torch.tensor, the loss term corresponding to maximising the entropy of the policy.
-        loss         : torch.tensor, the global loss term.
+        loss_policy  : Float, the loss term corresponding to improving the policy.
+        loss_entropy : Float, the loss term corresponding to maximising the entropy of the policy.
+        loss         : Float, the global loss term.
         """
 
         R = 0
         optimizer.zero_grad()
-        for t in range(len(states)-1, -1, -1):
+        loss_policy, loss_entropy = 0, 0
+        for t in range(len(states)-2, -1, -1):
             R = rewards[t] + self.gamma*R
-            loss_policy = -self.gamma**t*R*actions_logprobs[t]
-            loss_entropy = -entropies[t]
-            loss = loss_policy + alpha_entropy*loss_entropy
-            loss.backward()
+            loss_policy += -self.gamma**t*R*actions_logprobs[t]
+            loss_entropy += -entropies[t]
 
+        loss_policy /= len(states) - 1
+        loss_entropy /= len(states) - 1
+        loss = loss_policy + alpha_entropy*loss_entropy
+        loss.backward()
         optimizer.step()
-        return loss_policy, loss_entropy, loss
+        return loss_policy.item(), loss_entropy.item(), loss.item()
 
     def train(self, 
               n_episodes: int = 1000, 
