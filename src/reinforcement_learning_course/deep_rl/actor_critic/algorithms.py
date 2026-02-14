@@ -224,6 +224,7 @@ class ActorCritic(Agent[np.array, int]):
         writer = SummaryWriter(log_dir=log_dir)
         rewards_episodes = deque(maxlen=100)
         reward_mean = None
+        it = 0
         for episode in range(n_episodes):
             state, _ = self.env.reset()
             done = False
@@ -242,10 +243,11 @@ class ActorCritic(Agent[np.array, int]):
                     optimizer_value
                 )
                 state = states[-1]
-                writer.add_scalar('Policy/loss_policy', loss_policy, episode)
-                writer.add_scalar('Policy/loss_entropy', loss_entropy, episode)
-                writer.add_scalar('Policy/loss', loss, episode)
-                writer.add_scalar('Value/loss', loss_value, episode)
+                writer.add_scalar('Policy/loss_policy', loss_policy, it)
+                writer.add_scalar('Policy/loss_entropy', loss_entropy, it)
+                writer.add_scalar('Policy/loss', loss, it)
+                writer.add_scalar('Value/loss', loss_value, it)
+                it += 1
                 
             writer.add_scalar('Return/return', reward_episode, episode)
             if len(rewards_episodes) < rewards_episodes.maxlen:
