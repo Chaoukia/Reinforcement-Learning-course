@@ -5,90 +5,78 @@ from gymnasium import Env
 from gymnasium.core import ObsType, ActType
 
 class Agent(Generic[ObsType, ActType]):
-    """
-    Abstract class of an RL agent.
+    """Abstract base class for RL agents.
+    
+    This class provides the common interface and utilities for reinforcement learning
+    agents interacting with gymnasium environments.
     """
 
     def __init__(self, env: Env[ObsType, ActType], gamma: float = 1.0) -> None:
-        """
-        Description
-        ----------------------
-        Construtor.
-
-        Parameters & Attributes
-        ----------------------
-        env   : gymnasium environment where the agent acts.
-        gamma : Float, discount factor.
-
-        Returns
-        ----------------------
+        """Initialize the RL agent.
+        
+        Args:
+            env: Gymnasium environment where the agent acts.
+            gamma: Discount factor, typically in [0, 1].
+        
+        Attributes:
+            env: The gymnasium environment.
+            gamma: The discount factor.
         """
 
         self.env = env
         self.gamma = gamma
 
     def set_env(self, env: Env[ObsType, ActType]) -> None:
-        """
-        Description
-        ----------------------
-        Set the agent's environment.
-
-        Parameters
-        ----------------------
-        env : gymnasium environment.
-
-        Returns
-        ----------------------
+        """Set the agent's environment.
+        
+        Args:
+            env: Gymnasium environment to set.
         """
 
         self.env = env
 
     def action(self, state: ObsType) -> ActType:
-        """
-        Description
-        ----------------------
-        Choose the action to perform at a state.
-
-        Parameters
-        ----------------------
-        state : StateType, The state where the agent needs to choose an action.
-
-        Returns
-        ----------------------
+        """Choose an action for the given state.
+        
+        This is an abstract method that must be implemented by subclasses.
+        
+        Args:
+            state: The current state from the environment.
+        
+        Returns:
+            The action to perform.
+        
+        Raises:
+            NotImplementedError: Must be implemented by subclasses.
         """
 
         raise NotImplementedError
     
     def train(self) -> None:
-        """
-        Description
-        ----------------------
-        Train the agent.
-
-        Parameters
-        ----------------------
+        """Train the agent.
         
-        Returns
-        ----------------------
+        This is an abstract method that must be implemented by subclasses.
+        
+        Raises:
+            NotImplementedError: Must be implemented by subclasses.
         """
 
         raise NotImplementedError
     
     def test(self, n_episodes: int = 1000, verbose: bool = False) -> tuple[float, float]:
-        """
-        Description
-        --------------
-        Test the agent.
+        """Test the agent's performance over multiple episodes.
         
-        Parameters
-        --------------
-        n_episodes : Int, number of test episodes.
-        verbose    : Boolean, if True, print the episode index and its corresponding length and return.
+        Evaluates the agent's policy without learning by running episodes and collecting
+        return statistics.
         
-        Returns
-        --------------
-        return_mean : Float, mean of the episode return.
-        return_std  : Float, standard deviation of the episode return.
+        Args:
+            n_episodes: Number of test episodes to run. Defaults to 1000.
+            verbose: If True, print episode statistics. Defaults to False.
+        
+        Returns:
+            A tuple containing:
+                - return_mean: Mean episode return across all test episodes.
+                - return_std: Standard deviation of episode returns.
         """
         
         returns = np.empty(n_episodes)
@@ -115,19 +103,15 @@ class Agent(Generic[ObsType, ActType]):
         return return_mean, return_std
             
     def save_gif(self, path: str, n_episodes: int = 1, duration: int = 150) -> None:
-        """
-        Description
-        --------------
-        Test the agent and save a gif.
+        """Test the agent and save the episodes as an animated GIF.
         
-        Arguments
-        --------------
-        file_name   : String, path to the saved gif.
-        n_episoodes : Int, number of episodes.
-        duration    : Int.
+        Runs episodes using the current policy and saves rendered frames as an
+        animated GIF file.
         
-        Returns
-        --------------
+        Args:
+            path: File path where the GIF will be saved.
+            n_episodes: Number of episodes to record. Defaults to 1.
+            duration: Duration of each frame in milliseconds. Defaults to 150.
         """
         
         frames = []
@@ -150,33 +134,29 @@ class Agent(Generic[ObsType, ActType]):
         frames[0].save(path, save_all=True, append_images=frames[1:], optimize=False, duration=duration, loop=0)
     
     def save(self, path: str) -> None:
-        """
-        Description
-        ----------------------
-        Save the agent.
-
-        Parameters
-        ----------------------
-        path: String, path where to save the agent.
-
-        Returns
-        ----------------------
+        """Save the agent to a file.
+        
+        This is an abstract method that must be implemented by subclasses.
+        
+        Args:
+            path: File path where the agent will be saved.
+        
+        Raises:
+            NotImplementedError: Must be implemented by subclasses.
         """
 
         raise NotImplementedError
     
     def load(self, path: str) -> None:
-        """
-        Description
-        ----------------------
-        Load the agent.
-
-        Parameters
-        ----------------------
-        path: String, path where to load the agent.
-
-        Returns
-        ----------------------
+        """Load the agent from a file.
+        
+        This is an abstract method that must be implemented by subclasses.
+        
+        Args:
+            path: File path from where the agent will be loaded.
+        
+        Raises:
+            NotImplementedError: Must be implemented by subclasses.
         """
 
         raise NotImplementedError

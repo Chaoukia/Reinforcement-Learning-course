@@ -12,57 +12,48 @@ from gymnasium import Env
 
 
 class ReinforceBaseline(Agent[np.array, int]):
-    """
-    Reinforce agent.
+    """REINFORCE with baseline (advantage) learning agent.
+    
+    Implements REINFORCE algorithm with learned value baseline to reduce
+    variance in policy gradient estimates.
     """
 
     def __init__(self, env: Env[np.array, int], gamma: float = 0.99) -> None:
-        """
-        Description
-        -------------------------------
-        Constructor.
-
-        Parameters
-        -------------------------------
-        env   : gymnasium environment.
-        gamma : Float, discount factor.
-
-        Returns
-        -------------------------------
+        """Initialize the REINFORCE Baseline agent.
+        
+        Args:
+            env: Gymnasium environment wrapper.
+            gamma: Discount factor. Defaults to 0.99.
         """
         super().__init__(env, gamma)
         self.policy_network, self.value_network = self.make_networks()
 
     def make_networks(self) -> tuple[nn.Module, nn.Module]:
-        """
-        Description
-        -------------------------------
-        Initialize the policy network and value networks.
-
-        Parameters
-        -------------------------------
-
-        Returns
-        -------------------------------
+        """Initialize the policy and value networks.
+        
+        Must be implemented by subclasses with appropriate architectures.
+        
+        Returns:
+            Tuple of (policy_network, value_network) modules.
+        
+        Raises:
+            NotImplementedError: Must be implemented by subclasses.
         """
 
         raise NotImplementedError
     
     def action_explore(self, state: np.array) -> tuple[int, torch.tensor, torch.tensor]:
-        """
-        Description
-        -------------------
-        Choose an action according to the policy network and return the necessary elements for training. To use when training.
-
-        Parameters
-        -------------------
-        state : np.array, a state.
-
-        Returns
-        -------------------
-        action         : Int, action taken by the policy.
-        action_logprob : torch.tensor, logit of the performed action.
-        entropy        : torch.tensor, entropy of the current policy.
+        """Select action during training with policy exploration.
+        
+        Samples action from policy distribution and returns required training information.
+        
+        Args:
+            state: Current observation as numpy array.
+        
+        Returns:
+            action: Integer action sampled from policy.
+            action_logprob: Log probability of action under current policy.
+            entropy: Entropy of policy distribution at this state.
         """
 
         logits = self.policy_network(torch.from_numpy(state))
@@ -73,18 +64,13 @@ class ReinforceBaseline(Agent[np.array, int]):
         return action.item(), action_logprob, entropy
     
     def action(self, state: np.array) -> int:
-        """
-        Description
-        -------------------
-        Choose an action according to the policy network. To use when testing.
-
-        Parameters
-        -------------------
-        state : np.array, a state.
-
-        Returns
-        -------------------
-        action : Int, action taken by the policy.
+        """Select action during testing using learned policy.
+        
+        Args:
+            state: Current observation as numpy array.
+        
+        Returns:
+            Integer action sampled from policy (greedy without exploration noise).
         """
 
         with torch.no_grad():
@@ -94,21 +80,16 @@ class ReinforceBaseline(Agent[np.array, int]):
             return action.item()
         
     def unroll(self) -> tuple[list[np.array], list[torch.tensor], list[float], list[torch.tensor], float]:
-        """
-        Description
-        -------------------
-        Unroll an episode with the current policy.
-
-        Parameters
-        -------------------
-
-        Returns
-        -------------------
-        states           : List of visited states.
-        actions_logprobs : List of logits of the performed actions.
-        rewards          : List of received rewards.
-        entropies        : List of entropies of the policy evaluated at the visited states.
-        reward_episode   : Float, return of the episode.
+        """Execute one episode with current policy.
+        
+        Collects trajectory data needed for policy gradient computation.
+        
+        Returns:
+            states: List of observed states throughout episode.
+            actions_logprobs: List of log probabilities for taken actions.
+            rewards: List of immediate rewards received.
+            entropies: List of policy entropies at each state.
+            reward_episode: Total discounted return for the episode.
         """
 
         state, _ = self.env.reset()
@@ -137,25 +118,25 @@ class ReinforceBaseline(Agent[np.array, int]):
               optimizer_policy: optim, 
               optimizer_value: optim
               ) -> tuple[torch.tensor, torch.tensor, torch.tensor, torch.tensor]:
-        """
-        Description
-        -------------------
-        Update the policy network parameters.
-
-        Parameters
-        -------------------
-        states           : List of visited states.
-        actions_logprobs : List of logits of the performed actions.
-        rewards          : List of received rewards.
-        entropies        : List of entropies of the policy evaluated at the visited states.
-        optimizer        : torch.optim.Optimizer object that updates the network parameters.
-
-        Returns
-        -------------------
-        loss_policy  : Float, the loss term corresponding to improving the policy.
-        loss_entropy : Float, the loss term corresponding to maximising the entropy of the policy.
-        loss         : Float, the global loss term.
-        loss_value   : Float, the loss term for the value.
+        """Update policy and value networks using REINFORCE with baseline.
+        
+        Updates policy using advantage estimates from baseline, and trains
+        value network as baseline function.
+        
+        Args:
+            states: List of states visited in episode.
+            actions_logprobs: Log probabilities of actions taken.
+            rewards: Rewards received in episode.
+            entropies: Policy entropies at each state.
+            alpha_entropy: Weight of entropy regularization term.
+            optimizer_policy: PyTorch optimizer for policy network.
+            optimizer_value: PyTorch optimizer for value network.
+        
+        Returns:
+            loss_policy: Policy gradient loss value.
+            loss_entropy: Entropy regularization loss value.
+            loss: Total policy loss (policy + entropy).
+            loss_value: Value network (baseline) loss value.
         """
 
         R = 0
@@ -188,22 +169,18 @@ class ReinforceBaseline(Agent[np.array, int]):
               log_dir: str = 'runs/', 
               print_iter: int = 10
               ) -> None:
-        """
-        Description
-        --------------
-        Train the agent.
+        """Train the REINFORCEBaseline agent.
         
-        Arguments
-        --------------
-        n_episodes : Int, number of episodes in training phase.
-        lr_policy  : Float, learning rate for the policy network.
-        lr_value   : Float, learning rate for the value network.
-        thresh     : Float, lower bound on the average of the last 10 training episodes above which early stopping is activated.
-        file_save  : String, name of the file containingt the saved network weights.
-        print_iter : Int, number of episodes between two consecutive prints.
+        Runs multiple episodes of training with periodic evaluation and early stopping.
         
-        Returns
-        --------------
+        Args:
+            n_episodes: Maximum number of training episodes. Defaults to 1000.
+            lr_policy: Learning rate for policy optimizer. Defaults to 1e-4.
+            lr_value: Learning rate for value network optimizer. Defaults to 1e-4.
+            alpha_entropy: Weight of entropy regularization. Defaults to 0.1.
+            thresh: Target average return for early stopping. Defaults to 250.
+            log_dir: Directory for TensorBoard logs. Defaults to 'runs/'.
+            print_iter: Episodes between progress prints. Defaults to 10.
         """
 
         optimizer_policy = optim.Adam(self.policy_network.parameters(), lr=lr_policy)
@@ -235,17 +212,10 @@ class ReinforceBaseline(Agent[np.array, int]):
         print('Training finished without early stopping.')
 
     def save(self, path: str | Path) -> None:
-        """
-        Description
-        --------------
-        Save the weights of the policy and value networks.
+        """Save policy and value network weights to disk.
         
-        Parameters
-        --------------
-        path : String or Path, path to the directory storing the weights of the policy and value networks.
-        
-        Returns
-        --------------
+        Args:
+            path: Directory path where network weights will be saved.
         """
 
         os.makedirs(str(path), exist_ok=True)
@@ -253,20 +223,13 @@ class ReinforceBaseline(Agent[np.array, int]):
         path_policy = path / "policy.pt"
         path_value = path / "value.pt"
         torch.save(self.policy_network.state_dict(), path_policy)
-        torch.save(self.policy_network.state_dict(), path_value)
+        torch.save(self.value_network.state_dict(), path_value)
 
     def load(self, path: str | Path) -> None:
-        """
-        Description
-        --------------
-        Load the weights of the policy and value networks.
+        """Load policy and value network weights from disk.
         
-        Parameters
-        --------------
-        path : String or Path, path to the directory storing the weights of the policy and value networks.
-        
-        Returns
-        --------------
+        Args:
+            path: Directory path containing saved network weights.
         """
 
         if not os.path.isdir(str(path)):

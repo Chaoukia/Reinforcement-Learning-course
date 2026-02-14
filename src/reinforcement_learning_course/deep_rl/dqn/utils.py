@@ -5,57 +5,46 @@ from collections import deque, namedtuple
 Transition = namedtuple('Transition', ('state', 'action', 'reward', 'next_state', 'done'))
     
 class Memory:
+    """Uniform experience replay memory buffer.
     
-    """
-    Class of the uniform experience replay memory.
+    Stores transitions and provides sampling functionality for off-policy
+    learning with experience replay.
     """
     
     def __init__(self, max_size):
-        """
-        Description
-        -------------------------
-        Constructor of class Memory.
+        """Initialize the replay buffer.
         
-        Arguments & Attributes
-        -------------------------
-        max_size   : Int, maximum size of the replay memory.
-        buffer     : collections.deque object of maximum length max_size, the container representing the replay memory.
+        Args:
+            max_size: Maximum number of transitions to store in the buffer.
+        
+        Attributes:
+            buffer: Deque container with fixed maximum capacity.
         """
         
         self.buffer = deque(maxlen = max_size)
     
     def add(self, state, action, reward, next_state, done):
-        """
-        Description
-        -------------
-        Add experience to the replay buffer.
+        """Add a transition to the replay buffer.
         
-        Arguments
-        -------------
-        state      : np.array, state from a gym environment.
-        action     : Int, action.
-        reward     : Float, reward of the transition.
-        next_state : np.array, next state of the transition.
-                     
-        Returns
-        -------------
+        Args:
+            state: Observation from the environment.
+            action: Action taken.
+            reward: Reward received.
+            next_state: Resulting observation.
+            done: Whether the episode terminated.
         """
 
         self.buffer.append((state, action, reward, next_state, done))
     
     def sample(self, batch_size):
-        """
-        Description
-        -------------
-        Randomly sample "batch_size" transitions from the replay buffer.
+        """Randomly sample transitions from the replay buffer.
         
-        Arguments
-        -------------
-        batch_size : Int, the number of transitions to sample.
+        Args:
+            batch_size: Number of transitions to sample.
         
-        Returns
-        -------------
-        Named tuple, the sampled batch.
+        Returns:
+            Named tuple Transition with fields (state, action, reward, next_state, done),
+            where each field is iterable over the batch.
         """
         
         transitions = random.sample(self.buffer, batch_size)
@@ -63,16 +52,16 @@ class Memory:
     
 
 def update_epsilon(epsilon_start, epsilon_stop, decay_rate, it):
-    """
-    Description
-    --------------
-    Update the epsilon parameter of the epsilon-greedy policy.
+    """Compute epsilon value with exponential decay schedule.
     
-    Arguments
-    --------------
+    Args:
+        epsilon_start: Initial exploration rate.
+        epsilon_stop: Final exploration rate.
+        decay_rate: Exponential decay rate.
+        it: Current iteration number.
     
-    Returns
-    --------------
+    Returns:
+        Float, the epsilon value for the current iteration.
     """
 
     return epsilon_stop + (epsilon_start - epsilon_stop)*np.exp(-decay_rate*it)

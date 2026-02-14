@@ -6,27 +6,25 @@ from typing import List
 
 
 class Astar(Agent[int, int]):
-    """
-    A* algorithm.
+    """A* search algorithm for finding optimal policies.
+    
+    Implements the A* algorithm to solve planning problems by finding the optimal
+    path from an initial state to a goal state.
     """
 
     def __init__(self, env: Env[int, int], gamma: float = 1.0) -> None:
-        """
-        Description
-        --------------------------------------------
-        Constructor.
-
-        Parameters & Attributes
-        --------------------------------------------
-        env       : gymnasium environment Wrapper.
-        gamma     : Float in [0, 1] generally close to 1, discount factor.
-        n_states  : Int, number of states.
-        n_actions : Int, number of n_actions.
-        policy    : np.array of shape (n_states,), the policy function.
-        goals     : Set of goal states.
-
-        Returns
-        --------------------------------------------
+        """Initialize the A* agent.
+        
+        Args:
+            env: Gymnasium environment wrapper.
+            gamma: Discount factor in [0, 1], typically close to 1. Defaults to 1.0.
+        
+        Attributes:
+            env: The gymnasium environment.
+            n_states: Number of states in the environment.
+            n_actions: Number of actions available in the environment.
+            policy: Array of shape (n_states,) storing the best action for each state.
+            goals: Set of goal states to reach.
         """
 
         super().__init__(env, gamma)
@@ -37,92 +35,86 @@ class Astar(Agent[int, int]):
         self.goals = None
 
     def reset(self) -> None:
-        """
-        Description
-        --------------------------------------------
-        Reinitialize the policy.
-
-        Parameters
-        --------------------------------------------
-
-        Returns
-        --------------------------------------------
+        """Reinitialize the policy with zeros.
+        
+        Resets the policy array so all states map to action 0.
         """
 
         self.policy = np.zeros(self.n_states, dtype=int)
 
-    def set_n_states_actions(self) -> None:
-        """
-        Description
-        --------------------------------------------
-        Set the number of states and actions,
-
-        Parameters
-        --------------------------------------------
-
-        Returns
-        --------------------------------------------
+    def set_n_states_actions(self) -> tuple[int, int]:
+        """Define the number of states and actions.
+        
+        Must be implemented by subclasses to specify the problem dimensions.
+        
+        Returns:
+            A tuple containing:
+                - n_states: Number of states in the environment.
+                - n_actions: Number of actions available.
+        
+        Raises:
+            NotImplementedError: Must be implemented by subclasses.
         """
 
         raise NotImplementedError
 
     def heuristic(self, state: int) -> float:
-        """
-        Description
-        --------------------------------------------
-        Return an upper bound on the optimal value at state.
-
-        Arguments
-        --------------------------------------------
-        state : Int, a state.
-
-        Returns
-        --------------------------------------------
-        Float, the heuristic value of state.
+        """Compute an upper bound on the optimal value from a state.
+        
+        Must be implemented by subclasses. Returns a heuristic estimate that guides
+        the A* search by overestimating the value of reaching a goal from the state.
+        
+        Args:
+            state: A state in the environment.
+        
+        Returns:
+            Float, the heuristic value of the state (upper bound on optimal return).
+        
+        Raises:
+            NotImplementedError: Must be implemented by subclasses.
         """
 
         raise NotImplementedError
 
     def split(self, state: int, action: int) -> tuple[float, int]:
-        """
-        Description
-        --------------
-        Return the reward and next state induced by taking an action in a state.
-
-        Arguments
-        --------------
-        state  : Int, a state.
-        action : Int, an action.
-
-        Returns
-        --------------
-        Float, the induced reward.
-        Int, the corresponding next state.
+        """Get the reward and next state from taking an action in a state.
+        
+        Must be implemented by subclasses to define the environment's transition dynamics.
+        
+        Args:
+            state: The current state.
+            action: The action to take.
+        
+        Returns:
+            A tuple containing:
+                - reward: The immediate reward from taking the action.
+                - next_state: The resulting state after the action.
+        
+        Raises:
+            NotImplementedError: Must be implemented by subclasses.
         """
 
         raise NotImplementedError
 
     def expand(self, info_state: List) -> List:
-        """
-        Description
-        --------------
-        Expand a state to the states that stem from it by taking each possible action.
-
-        Arguments
-        --------------
-        info_state : List of three elements.
-                        - value   : Float, heuristic value of state. Equal to the sum of rewards following actions from the root plus an upper bound on the return of the optimal policy from state.
-                        - reward  : Float, sum of rewards following actions from the root.
-                        - actions : List of actions that lead to state from the initial state (root).
-                        - state   : Int, a state.
-
-        Returns
-        --------------
-        info_children : List of lists of the form [value, actions, next_state] where:
-                        - value      : Float, heuristic value of next_state. Equal to the sum of rewards following actions from the root plus an upper bound on the return of the optimal policy from next_state.
-                        - reward     : Float, sum of rewards following actions from the root.
-                        - actions    : List of actions that lead to next_state from the initial state (root).
-                        - next_state : Int, a next (child) state that stems from taking an action in state.
+        """Expand a state to all its successor states via available actions.
+        
+        Generates all children states reachable by taking each possible action
+        from the given state.
+        
+        Args:
+            info_state: A list with four elements:
+                - value: Float, heuristic value of the state (cumulative reward + heuristic).
+                - reward_neg: Float, negated cumulative reward from the root.
+                - actions: List of actions leading to this state from the root.
+                - state: Int, the state to expand.
+        
+        Returns:
+            A list of child state information lists, each containing:
+                - value_neg: Float, negated heuristic value of the child state.
+                - reward_child_neg: Float, negated cumulative reward to the child.
+                - actions_child: List of actions leading to the child from the root.
+                - child: Int, the child state.
         """
 
         _, reward_neg, actions, state = info_state
@@ -138,18 +130,12 @@ class Astar(Agent[int, int]):
         return info_children
     
     def train(self) -> None:
-        """
-        Description
-        --------------
-        Run the A* algorithm to find the optimal policy inducing the path of maximum reward from an initial state (root) to a goal state.
-
-        Parameters
-        --------------
-
-        Returns
-        --------------
-        List of optimal actions to follow starting from the root, when the problem is solvable.
-        None when the problem is unsolvable.
+        """Run the A* algorithm to find the optimal policy.
+        
+        Executes the A* search algorithm to find the optimal sequence of actions
+        from the initial state to a goal state, maximizing the cumulative reward.
+        Updates the policy with the discovered optimal actions. Prints results and
+        goal state verification data.
         """
 
         memo = {}
@@ -193,18 +179,14 @@ class Astar(Agent[int, int]):
         print('The problem is unsolvable.')
 
     def infer(self, root: int, actions: List) -> None:
-        """
-        Description
-        --------------
-        Infer the optimal policy from a root and a list of corresponding actions.
-
-        Arguments
-        --------------
-        root    : Int, an initial state.
-        actions : List of actions.
-
-        Returns
-        --------------
+        """Compile the policy from a root state and a sequence of actions.
+        
+        Given a sequence of actions from the initial state to a goal, sets the
+        policy to follow these actions from each encountered state.
+        
+        Args:
+            root: The initial state.
+            actions: List of actions to take from the root to reach a goal.
         """
 
         state = root
@@ -216,19 +198,14 @@ class Astar(Agent[int, int]):
             state = next_state
             i += 1
 
-    def action(self, state):
-        """
-        Description
-        --------------
-        Take an action according to the estimated optimal policy.
+    def action(self, state: int) -> int:
+        """Get the best action for a state according to the learned policy.
         
-        Arguments
-        --------------
-        state : np.array, state.
+        Args:
+            state: The current state.
         
-        Returns
-        --------------
-        Int, action.
+        Returns:
+            Int, the action prescribed by the policy for this state.
         """
         
         return self.policy[state]

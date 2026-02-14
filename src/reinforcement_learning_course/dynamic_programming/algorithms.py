@@ -4,30 +4,27 @@ from gymnasium import Env
 
 
 class ValueIteration(Agent[int, int]):
-    """
-    Value Iteration algorithm.
+    """Value Iteration algorithm for finding optimal policies.
+    
+    Implements value iteration, a dynamic programming algorithm for solving
+    Markov Decision Processes (MDPs) to find optimal policies.
     """
 
     def __init__(self, env: Env[int, int], gamma: float = 1.0) -> None:
-        """
-        Description
-        --------------------------------------------
-        Constructor.
-
-        Parameters & Attributes
-        --------------------------------------------
-        env                      : gymnasium environment Wrapper
-        make_transition_matrices : function generating the transirion matrices.
-        gamma                    : Float in [0, 1] generally close to 1, discount factor.
-        p_transition             : np.array of shape (n_state, n_actions, n_states), transition probabilities matrix.
-        r_transition             : np.array of shape (n_state, n_actions, n_states), transition rewards matrix.
-        n_states                 : Int, number of states.
-        n_actions                : Int, number of n_actions.
-        policy                   : np.array of shape (n_states,), the policy function.
-        value                    : np.array of shape (n_states,), the state value function.
-
-        Returns
-        --------------------------------------------
+        """Initialize the Value Iteration agent.
+        
+        Args:
+            env: Gymnasium environment wrapper with integer state and action spaces.
+            gamma: Discount factor in [0, 1], typically close to 1. Defaults to 1.0.
+        
+        Attributes:
+            env: The gymnasium environment.
+            n_states: Number of states in the environment.
+            n_actions: Number of actions available.
+            p_transition: Array of shape (n_states, n_actions, n_states) with transition probabilities.
+            r_transition: Array of shape (n_states, n_actions, n_states) with transition rewards.
+            policy: Array of shape (n_states,) storing the best action for each state.
+            value: Array of shape (n_states,) storing the estimated value of each state.
         """
 
         super().__init__(env, gamma)
@@ -37,85 +34,70 @@ class ValueIteration(Agent[int, int]):
         self.value = np.zeros(self.n_states)
 
     def reset(self) -> None:
-        """
-        Description
-        --------------------------------------------
-        Reset the agent's value and policy.
-
-        Parameters
-        --------------------------------------------
-
-        Returns
-        --------------------------------------------
+        """Reset the value function and policy to zero.
+        
+        Clears learned values and policy for training from scratch.
         """
 
         self.value = np.zeros(self.n_states)
         self.policy = np.zeros(self.n_states, dtype=int)
 
     def set_n_states_actions(self) -> tuple[int, int]:
-        """
-        Description
-        --------------------------------------------
-        Define the number of states and actions.
-
-        Parameters
-        --------------------------------------------
-
-        Returns
-        --------------------------------------------
+        """Define the number of states and actions in the environment.
+        
+        Must be implemented by subclasses to specify the problem dimensions.
+        
+        Returns:
+            A tuple containing:
+                - n_states: Number of states in the environment.
+                - n_actions: Number of actions available.
+        
+        Raises:
+            NotImplementedError: Must be implemented by subclasses.
         """
 
         raise NotImplementedError
     
     def make_transition_matrices(self) -> tuple[np.array, np.array]:
-        """
-        Description
-        --------------------------------------------
-        Construct p_transition and r_transition the probability and reward transition matrices (respectively).
+        """Construct transition probability and reward matrices.
         
-        Parameters
-        --------------------------------------------
+        Must be implemented by subclasses to define the environment's dynamics.
         
-        Returns
-        --------------------------------------------
-        p_transition : np.array of shape (n_state, n_actions, n_states), the transition probabilities matrix.
-        r_transition : np.array of shape (n_state, n_actions, n_states), the transition rewards matrix.
-        n_states     : Int, number of states.
-        n_actions    : Int, number of actions.
+        Returns:
+            A tuple containing:
+                - p_transition: Array of shape (n_states, n_actions, n_states) with
+                  transition probabilities P[s][a][s'] = Pr(s' | s, a).
+                - r_transition: Array of shape (n_states, n_actions, n_states) with
+                  transition rewards R[s][a][s'] = r(s, a, s').
+        
+        Raises:
+            NotImplementedError: Must be implemented by subclasses.
         """
         
         raise NotImplementedError
     
     def action(self, state: int) -> int:
-        """
-        Description
-        --------------
-        Choose an action according to the agent's policy.
+        """Select an action according to the learned policy.
         
-        Parameters
-        --------------
-        state : int, state where to choose the policy's action.
+        Args:
+            state: The current state.
         
-        Returns
-        --------------
-        int, action chosen by the agent's policy.
+        Returns:
+            The action prescribed by the policy for this state.
         """
         
         return self.policy[state]
     
     def train(self, n: int = 1000, epsilon: float = 1e-12) -> None:
-        """
-        Description
-        --------------
-        Train with Value Iteration.
-
-        Parameters
-        --------------
-        n       : Int, maximum number of iterations.
-        epsilon : Float, small threshold 0 < epsilon << 1. Stop training if the norm difference between two consecutive values drops below epsilon.
-
-        Returns
-        --------------
+        """Train the agent using Value Iteration.
+        
+        Iteratively updates value estimates using the Bellman optimality equation
+        until convergence or maximum iterations reached.
+        
+        Args:
+            n: Maximum number of iterations. Defaults to 1000.
+            epsilon: Convergence threshold - stops if value norm change is below this.
+              Defaults to 1e-12.
         """
 
         i=0
@@ -135,29 +117,27 @@ class ValueIteration(Agent[int, int]):
     
 
 class QIteration(Agent[int, int]):
-    """
-    Q-Iteration algorithm.
+    """Q-Iteration algorithm for finding optimal policies.
+    
+    Implements Q-iteration, a dynamic programming algorithm that directly learns
+    state-action values to find optimal policies.
     """
 
     def __init__(self, env: Env[int, int], gamma: float = 1.0) -> None:
-        """
-        Description
-        --------------------------------------------
-        Constructor.
-
-        Parameters & Attributes
-        --------------------------------------------
-        env          : gymnasium environment Wrapper
-        gamma        : Float in [0, 1] generally close to 1, discount factor.
-        p_transition : np.array of shape (n_state, n_actions, n_states), transition probabilities matrix.
-        r_transition : np.array of shape (n_state, n_actions, n_states), transition rewards matrix.
-        n_states     : Int, number of states.
-        n_actions    : Int, number of actions.
-        policy       : np.array of shape (n_states,), the policy function.
-        q_value      : np.array of shape (n_states, n_actions), the state-action value function.
-
-        Returns
-        --------------------------------------------
+        """Initialize the Q-Iteration agent.
+        
+        Args:
+            env: Gymnasium environment wrapper with integer state and action spaces.
+            gamma: Discount factor in [0, 1], typically close to 1. Defaults to 1.0.
+        
+        Attributes:
+            env: The gymnasium environment.
+            n_states: Number of states in the environment.
+            n_actions: Number of actions available.
+            p_transition: Array of shape (n_states, n_actions, n_states) with transition probabilities.
+            r_transition: Array of shape (n_states, n_actions, n_states) with transition rewards.
+            policy: Array of shape (n_states,) storing the best action for each state.
+            q_value: Array of shape (n_states, n_actions) storing state-action values.
         """
 
         super().__init__(env, gamma)
@@ -167,83 +147,70 @@ class QIteration(Agent[int, int]):
         self.q_value = np.zeros((self.n_states, self.n_actions))
 
     def reset(self) -> None:
-        """
-        Description
-        --------------------------------------------
-        Reset the agent's state-action value and policy.
-
-        Parameters
-        ----------------------
-
-        Returns
-        ----------------------
+        """Reset the Q-values and policy to zero.
+        
+        Clears learned state-action values and policy for training from scratch.
         """
 
         self.q_value = np.zeros((self.n_states, self.n_actions))
         self.policy = np.zeros(self.n_states, dtype=int)
 
     def set_n_states_actions(self) -> tuple[int, int]:
-        """
-        Description
-        --------------------------------------------
-        Define the number of states and actions.
-
-        Parameters
-        --------------------------------------------
-
-        Returns
-        --------------------------------------------
+        """Define the number of states and actions in the environment.
+        
+        Must be implemented by subclasses to specify the problem dimensions.
+        
+        Returns:
+            A tuple containing:
+                - n_states: Number of states in the environment.
+                - n_actions: Number of actions available.
+        
+        Raises:
+            NotImplementedError: Must be implemented by subclasses.
         """
 
         raise NotImplementedError
 
-    def make_transition_matrices(self) -> tuple[np.array, np.array, int, int]:
-        """
-        Description
-        --------------
-        Construct p_transition and r_transition the probability and reward transition matrices (respectively).
+    def make_transition_matrices(self) -> tuple[np.array, np.array]:
+        """Construct transition probability and reward matrices.
         
-        Parameters
-        --------------
+        Must be implemented by subclasses to define the environment's dynamics.
         
-        Returns
-        --------------
-        p_transition : np.array of shape (n_state, n_actions, n_states), the transition probabilities matrix.
-        r_transition : np.array of shape (n_state, n_actions, n_states), the transition rewards matrix.
+        Returns:
+            A tuple containing:
+                - p_transition: Array of shape (n_states, n_actions, n_states) with
+                  transition probabilities P[s][a][s'] = Pr(s' | s, a).
+                - r_transition: Array of shape (n_states, n_actions, n_states) with
+                  transition rewards R[s][a][s'] = r(s, a, s').
+        
+        Raises:
+            NotImplementedError: Must be implemented by subclasses.
         """
         
         raise NotImplementedError
 
     def action(self, state: int) -> int:
-        """
-        Description
-        --------------
-        Choose an action according to the agent's policy.
+        """Select an action according to the learned policy.
         
-        Parameters
-        --------------
-        state : int, state where to choose the policy's action.
+        Args:
+            state: The current state.
         
-        Returns
-        --------------
-        int, action chosen by the agent's policy.
+        Returns:
+            The action prescribed by the policy for this state.
         """
         
         return self.policy[state]
 
     def train(self, n: int = 1000, epsilon: float = 1e-12) -> None:
-        """
-        Description
-        --------------
-        Train with Q-iteration.
+        """Train the agent using Q-Iteration.
         
-        Arguments
-        --------------
-        epsilon : Float, small threshold 0 < epsilon << 1, stop the algorithm if the norm difference between two consecutive values drops below epsilon.
-        n       : Int, number of iterations.
+        Iteratively updates Q-values using the Bellman equation until convergence
+        or maximum iterations reached. Policy is extracted from learned Q-values.
         
-        Returns
-        --------------
+        Args:
+            n: Maximum number of iterations. Defaults to 1000.
+            epsilon: Convergence threshold - stops if Q-value norm change is below this.
+              Defaults to 1e-12.
         """
         
         i=0
@@ -266,29 +233,27 @@ class QIteration(Agent[int, int]):
         
 
 class PolicyIteration(Agent[int, int]):
-    """
-    Policy Iteration algorithm.
+    """Policy Iteration algorithm for finding optimal policies.
+    
+    Implements policy iteration, a dynamic programming algorithm that alternates
+    between policy evaluation and policy improvement until convergence.
     """
 
     def __init__(self, env: Env[int, int], gamma: float = 1.0) -> None:
-        """
-        Description
-        --------------------------------------------
-        Constructor.
-
-        Parameters & Attributes
-        --------------------------------------------
-        env          : gymnasium environment Wrapper
-        gamma        : Float in [0, 1] generally close to 1, discount factor.
-        p_transition : np.array of shape (n_state, n_actions, n_states), transition probabilities matrix.
-        r_transition : np.array of shape (n_state, n_actions, n_states), transition rewards matrix.
-        n_states     : Int, number of states.
-        n_actions    : Int, number of actions.
-        policy       : np.array of shape (n_states,), the policy function.
-        value        : np.array of shape (n_states,), the state value function.
-
-        Returns
-        --------------------------------------------
+        """Initialize the Policy Iteration agent.
+        
+        Args:
+            env: Gymnasium environment wrapper with integer state and action spaces.
+            gamma: Discount factor in [0, 1], typically close to 1. Defaults to 1.0.
+        
+        Attributes:
+            env: The gymnasium environment.
+            n_states: Number of states in the environment.
+            n_actions: Number of actions available.
+            p_transition: Array of shape (n_states, n_actions, n_states) with transition probabilities.
+            r_transition: Array of shape (n_states, n_actions, n_states) with transition rewards.
+            policy: Array of shape (n_states,) storing the current policy.
+            value: Array of shape (n_states,) storing the estimated value of each state.
         """
 
         super().__init__(env, gamma)
@@ -298,83 +263,71 @@ class PolicyIteration(Agent[int, int]):
         self.value = np.zeros(self.n_states)
 
     def reset(self) -> None:
-        """
-        Description
-        --------------------------------------------
-        Reset the agent's value and policy.
-
-        Parameters
-        ----------------------
-
-        Returns
-        ----------------------
+        """Reset the value function and policy to zero.
+        
+        Clears learned values and policy for training from scratch.
         """
 
         self.value = np.zeros(self.n_states)
         self.policy = np.zeros(self.n_states, dtype=int)
 
     def set_n_states_actions(self) -> tuple[int, int]:
-        """
-        Description
-        --------------------------------------------
-        Define the number of states and actions.
-
-        Parameters
-        --------------------------------------------
-
-        Returns
-        --------------------------------------------
+        """Define the number of states and actions in the environment.
+        
+        Must be implemented by subclasses to specify the problem dimensions.
+        
+        Returns:
+            A tuple containing:
+                - n_states: Number of states in the environment.
+                - n_actions: Number of actions available.
+        
+        Raises:
+            NotImplementedError: Must be implemented by subclasses.
         """
 
         raise NotImplementedError
 
-    def make_transition_matrices(self) -> tuple[np.array, np.array, int, int]:
-        """
-        Description
-        --------------
-        Construct p_transition and r_transition the probability and reward transition matrices (respectively).
+    def make_transition_matrices(self) -> tuple[np.array, np.array]:
+        """Construct transition probability and reward matrices.
         
-        Parameters
-        --------------
+        Must be implemented by subclasses to define the environment's dynamics.
         
-        Returns
-        --------------
-        p_transition : np.array of shape (n_state, n_actions, n_states), the transition probabilities matrix.
-        r_transition : np.array of shape (n_state, n_actions, n_states), the transition rewards matrix.
+        Returns:
+            A tuple containing:
+                - p_transition: Array of shape (n_states, n_actions, n_states) with
+                  transition probabilities P[s][a][s'] = Pr(s' | s, a).
+                - r_transition: Array of shape (n_states, n_actions, n_states) with
+                  transition rewards R[s][a][s'] = r(s, a, s').
+        
+        Raises:
+            NotImplementedError: Must be implemented by subclasses.
         """
         
         raise NotImplementedError
 
     def action(self, state: int) -> int:
-        """
-        Description
-        --------------
-        Choose an action according to the agent's policy.
+        """Select an action according to the learned policy.
         
-        Parameters
-        --------------
-        state : int, state where to choose the policy's action.
+        Args:
+            state: The current state.
         
-        Returns
-        --------------
-        int, action chosen by the agent's policy.
+        Returns:
+            The action prescribed by the policy for this state.
         """
         
         return self.policy[state]
 
     def train(self, n: int = 1000, epsilon: float = 1e-12) -> None:
-        """
-        Description
-        --------------
-        Train with Policy Iteration.
+        """Train the agent using Policy Iteration.
         
-        Arguments
-        --------------
-        n       : Int, maximum number of iterations.
-        epsilon : Float, small threshold 0 < epsilon << 1. Stop training if the norm difference between two consecutive values drops below epsilon.
+        Alternates between policy evaluation (computing values under current policy)
+        and policy improvement (updating policy to be greedy w.r.t. computed values)
+        until the policy stabilizes or maximum iterations reached.
         
-        Returns
-        --------------
+        Args:
+            n: Maximum number of iterations. Defaults to 1000.
+            epsilon: Convergence threshold - stops if value norm change is below this.
+              Defaults to 1e-12.
         """
         
         i=0

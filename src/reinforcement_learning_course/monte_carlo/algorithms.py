@@ -5,27 +5,25 @@ from gymnasium import Env
 
 
 class MonteCarlo(Agent[int, int]):
-    """
-    Monte-Carlo agent.
+    """Monte-Carlo reinforcement learning agent.
+    
+    Implements the Monte-Carlo method for learning optimal policies through
+    episode sampling and value estimation from complete trajectories.
     """
 
     def __init__(self, env: Env[int, int], gamma: float = 0.99) -> None:
-        """
-        Description
-        --------------------------------------------
-        Constructor.
-
-        Parameters & Attributes
-        --------------------------------------------
-        env       : gymnasium environment Wrapper.
-        gamma     : Float in [0, 1] generally close to 1, discount factor.
-        n_states  : Int, number of states.
-        n_actions : Int, number of n_actions.
-        q_values  : Dict mapping states to their action values.
-        self.visits    : Dict mapping states to their number of self.visits.
-
-        Returns
-        --------------------------------------------
+        """Initialize the Monte-Carlo agent.
+        
+        Args:
+            env: Gymnasium environment wrapper.
+            gamma: Discount factor, typically in [0, 1]. Defaults to 0.99.
+        
+        Attributes:
+            env: The gymnasium environment.
+            n_states: Number of states in the environment.
+            n_actions: Number of actions available.
+            q_values: Dictionary mapping states to arrays of state-action values.
+            visits: Dictionary mapping states to visit counts for each action.
         """
 
         super().__init__(env, gamma)
@@ -34,32 +32,21 @@ class MonteCarlo(Agent[int, int]):
         self.visits = {}
 
     def reset(self) -> None:
-        """
-        Description
-        --------------------------------------------
-        Reinitialize the state-action values function.
-
-        Parameters
-        --------------------------------------------
-
-        Returns
-        --------------------------------------------
+        """Reset the Q-values and visit counts.
+        
+        Clears all learned state-action values and visit statistics for training from scratch.
         """
 
         self.q_values = {}
         self.visits = {}
 
-    def set_n_states_actions(self) -> None:
-        """
-        Description
-        --------------------------------------------
-        Set the number of states and actions.
-
-        Parameters
-        --------------------------------------------
-
-        Returns
-        --------------------------------------------
+    def set_n_states_actions(self) -> tuple[int, int]:
+        """Get the number of states and actions from the environment.
+        
+        Returns:
+            A tuple containing:
+                - n_states: Number of states in the environment.
+                - n_actions: Number of actions available.
         """
 
         n_states = self.env.observation_space.n
@@ -67,19 +54,14 @@ class MonteCarlo(Agent[int, int]):
         return n_states, n_actions
     
     def action_explore(self, state: int, epsilon: float) -> int:
-        """
-        Description
-        --------------------------------------------
-        Take an action according to an epsilon-greedy policy.
+        """Select an action using epsilon-greedy exploration.
         
-        Parameters
-        --------------------------------------------
-        state   : np.array, state.
-        epsilon : Float in ]0, 1[, probability of taking a suboptimal action.
+        Args:
+            state: The current state.
+            epsilon: Exploration probability in (0, 1) - probability of taking a suboptimal action.
         
-        Returns
-        --------------------------------------------
-        Int, action to perform.
+        Returns:
+            The action to perform.
         """
 
         action_max = self.action(state)
@@ -90,18 +72,16 @@ class MonteCarlo(Agent[int, int]):
         return np.random.choice(self.n_actions)
         
     def action(self, state: int) -> int:
-        """
-        Description
-        --------------------------------------------
-        Take an action according to the estimated optimal policy.
+        """Select the best action according to estimated Q-values.
         
-        Parameters
-        --------------------------------------------
-        state : Int, state.
+        If the state has been visited, returns the action with highest Q-value.
+        Otherwise, returns a random action.
         
-        Returns
-        --------------------------------------------
-        Int, estimated optimal action.
+        Args:
+            state: The current state.
+        
+        Returns:
+            The estimated optimal action, or a random action if state is unseen.
         """
 
         if state in self.q_values:
@@ -110,17 +90,19 @@ class MonteCarlo(Agent[int, int]):
         return self.env.action_space.sample()
     
     def unroll(self, epsilon: float) -> tuple[List, List, List]:
-        """
-        Description
-        --------------------------------------------
-        Unroll the current epsilon-greedy policy from state.
+        """Run a single episode using the epsilon-greedy policy.
         
-        Parameters
-        --------------------------------------------
-        state : Int, an initial state.
+        Generates a sequence of states, actions, and rewards from an initial state
+        until a terminal state is reached.
         
-        Returns
-        --------------------------------------------
+        Args:
+            epsilon: Exploration probability for the epsilon-greedy policy.
+        
+        Returns:
+            A tuple containing:
+                - states: List of visited states.
+                - actions: List of actions taken.
+                - rewards: List of rewards received.
         """
 
         states, actions, rewards = [], [], []
@@ -138,23 +120,20 @@ class MonteCarlo(Agent[int, int]):
         return states, actions, rewards
     
     def train(self, epsilon_start: float = 1., epsilon_stop: float = 0.1, decay_rate: float = 1e-3, 
-              n_train: int = 1000, first_visit: bool = True, print_iter: int = 10):
-        """
-        Description
-        --------------------------------------------
-        Train an on-policy first-visit MC algorithm.
+              n_train: int = 1000, first_visit: bool = True, print_iter: int = 10) -> None:
+        """Train using the Monte-Carlo algorithm.
         
-        Parameters
-        --------------------------------------------
-        epsilon_start : Float in ]0, 1], initial value of epsilon.
-        epsilon_stop  : Float in ]0, 1], final value of epsilon.
-        decay_rate    : Float, decay rate of epsilon.
-        n_train       : Int, number of training episodes.
-        first_visit   : Boolean, whether to apply first visit MC or every visit MC.
-        print_iter    : Int, number of episodes episodes between two consecutive prints.
+        Iteratively samples episodes and updates Q-values based on returns observed
+        in each episode. Uses either first-visit or every-visit Monte-Carlo.
         
-        Returns
-        --------------------------------------------
+        Args:
+            epsilon_start: Initial exploration rate. Defaults to 1.0.
+            epsilon_stop: Final exploration rate. Defaults to 0.1.
+            decay_rate: Exponential decay rate for epsilon. Defaults to 1e-3.
+            n_train: Number of training episodes. Defaults to 1000.
+            first_visit: If True, use first-visit MC (only first occurrence of state counts).
+              If False, use every-visit MC. Defaults to True.
+            print_iter: Print progress every print_iter episodes. Defaults to 10.
         """
 
         for i in range(n_train):

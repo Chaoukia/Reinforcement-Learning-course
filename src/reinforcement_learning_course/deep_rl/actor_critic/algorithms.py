@@ -12,59 +12,56 @@ from gymnasium import Env
 
 
 class ActorCritic(Agent[np.array, int]):
-    """
-    Reinforce agent.
+    """Actor-Critic deep reinforcement learning agent.
+    
+    Implements the Actor-Critic architecture with separate policy (actor) and
+    value (critic) neural networks for more stable learning.
     """
 
     def __init__(self, env: Env[np.array, int], gamma: float = 0.99) -> None:
-        """
-        Description
-        -------------------------------
-        Constructor.
-
-        Parameters
-        -------------------------------
-        env   : gymnasium environment.
-        t_max : Int, maximum number of steps between two consecutive network updates.
-        gamma : Float, discount factor.
-
-        Returns
-        -------------------------------
+        """Initialize the Actor-Critic agent.
+        
+        Args:
+            env: Gymnasium environment with numpy array observations and integer actions.
+            gamma: Discount factor. Defaults to 0.99.
+        
+        Attributes:
+            policy_network: Neural network representing the actor (policy).
+            value_network: Neural network representing the critic (value function).
         """
 
         super().__init__(env, gamma)
         self.policy_network, self.value_network = self.make_networks()
 
     def make_networks(self) -> tuple[nn.Module, nn.Module]:
-        """
-        Description
-        -------------------------------
-        Initialize the policy network and value networks.
-
-        Parameters
-        -------------------------------
-
-        Returns
-        -------------------------------
+        """Initialize the policy and value networks.
+        
+        Must be implemented by subclasses to specify network architectures.
+        
+        Returns:
+            A tuple containing:
+                - policy_network: Neural network for the actor.
+                - value_network: Neural network for the critic.
+        
+        Raises:
+            NotImplementedError: Must be implemented by subclasses.
         """
 
         raise NotImplementedError
     
     def action_explore(self, state: np.array) -> tuple[int, torch.tensor, torch.tensor]:
-        """
-        Description
-        -------------------
-        Choose an action according to the policy network and return the necessary elements for training. To use when training.
-
-        Parameters
-        -------------------
-        state : np.array, a state.
-
-        Returns
-        -------------------
-        action         : Int, action taken by the policy.
-        action_logprob : torch.tensor, logit of the performed action.
-        entropy        : torch.tensor, entropy of the current policy.
+        """Sample an action from the policy with entropy information.
+        
+        Used during training to enable both exploration and entropy regularization.
+        
+        Args:
+            state: NumPy array representing the current state.
+        
+        Returns:
+            A tuple containing:
+                - action: Integer action sampled from the policy.
+                - action_logprob: Log probability of the sampled action.
+                - entropy: Entropy of the policy distribution.
         """
 
         logits = self.policy_network(torch.from_numpy(state))
@@ -75,18 +72,15 @@ class ActorCritic(Agent[np.array, int]):
         return action.item(), action_logprob, entropy
     
     def action(self, state: np.array) -> int:
-        """
-        Description
-        -------------------
-        Choose an action according to the policy network. To use when testing.
-
-        Parameters
-        -------------------
-        state : np.array, a state.
-
-        Returns
-        -------------------
-        action : Int, action taken by the policy.
+        """Select an action deterministically from the policy.
+        
+        Used during testing/evaluation to get the best action without sampling.
+        
+        Args:
+            state: NumPy array representing the current state.
+        
+        Returns:
+            Integer action sampled from the policy distribution.
         """
 
         with torch.no_grad():
@@ -95,23 +89,24 @@ class ActorCritic(Agent[np.array, int]):
             action = dist.sample()
             return action.item()
         
-    def unroll(self, state: np.array, t_max: int) -> tuple[list[np.array], list[torch.tensor], list[float], list[torch.tensor], float]:
-        """
-        Description
-        -------------------
-        Unroll an episode with the current policy.
-
-        Parameters
-        -------------------
-
-        Returns
-        -------------------
-        states           : List of visited states.
-        actions_logprobs : List of logits of the performed actions.
-        rewards          : List of received rewards.
-        entropies        : List of entropies of the policy evaluated at the visited states.
-        reward_episode   : Float, return of the episode.
-        done             : Boolean, whether the episode ended or not.
+    def unroll(self, state: np.array, t_max: int) -> tuple[list[np.array], list[torch.tensor], list[float], list[torch.tensor], float, bool]:
+        """Collect a trajectory of length up to t_max steps.
+        
+        Runs the policy for up to t_max steps or until a terminal state,
+        collecting states, actions, rewards and policy information.
+        
+        Args:
+            state: Starting state.
+            t_max: Maximum number of steps before truncating the episode.
+        
+        Returns:
+            A tuple containing:
+                - states: List of visited states.
+                - actions_logprobs: List of log probabilities of sampled actions.
+                - rewards: List of rewards received.
+                - entropies: List of policy entropies at each step.
+                - episode_return: Cumulative reward from this rollout.
+                - done: Whether the episode terminated.
         """
 
         states, actions_logprobs, rewards, entropies = [state], [], [], []
@@ -141,26 +136,27 @@ class ActorCritic(Agent[np.array, int]):
               alpha_entropy: float, 
               optimizer_policy: optim, 
               optimizer_value: optim
-              ) -> tuple[torch.tensor, torch.tensor, torch.tensor, torch.tensor]:
-        """
-        Description
-        -------------------
-        Update the policy network parameters.
-
-        Parameters
-        -------------------
-        states           : List of visited states.
-        actions_logprobs : List of logits of the performed actions.
-        rewards          : List of received rewards.
-        entropies        : List of entropies of the policy evaluated at the visited states.
-        optimizer        : torch.optim.Optimizer object that updates the network parameters.
-
-        Returns
-        -------------------
-        loss_policy  : Float, the loss term corresponding to improving the policy.
-        loss_entropy : Float, the loss term corresponding to maximising the entropy of the policy.
-        loss         : Float, the global loss term.
-        loss_value   : Float, the loss term for the value.
+              ) -> tuple[float, float, float, float]:
+        """Update both policy and value networks using a collected trajectory.
+        
+        Computes advantage estimates and performs gradient updates for both networks.
+        
+        Args:
+            states: List of states visited in the trajectory.
+            actions_logprobs: Log probabilities of sampled actions.
+            rewards: Rewards received at each step.
+            entropies: Policy entropies at each step.
+            done: Whether the episode terminated or was truncated.
+            alpha_entropy: Coefficient for entropy regularization term.
+            optimizer_policy: Optimizer for policy network.
+            optimizer_value: Optimizer for value network.
+        
+        Returns:
+            A tuple containing:
+                - loss_policy: Loss for policy gradient term.
+                - loss_entropy: Loss for entropy regularization.
+                - loss_total: Total loss (policy + entropy).
+                - loss_value: Loss for value function.
         """
 
         if done:
@@ -201,22 +197,20 @@ class ActorCritic(Agent[np.array, int]):
               log_dir: str = 'runs/', 
               print_iter: int = 10
               ) -> None:
-        """
-        Description
-        --------------
-        Train the agent.
+        """Train the Actor-Critic agent.
         
-        Arguments
-        --------------
-        n_episodes : Int, number of episodes in training phase.
-        lr_policy  : Float, learning rate for the policy network.
-        lr_value   : Float, learning rate for the value network.
-        thresh     : Float, lower bound on the average of the last 10 training episodes above which early stopping is activated.
-        file_save  : String, name of the file containingt the saved network weights.
-        print_iter : Int, number of episodes between two consecutive prints.
+        Iteratively samples episodes and performs network updates. Uses TensorBoard
+        logging and early stopping based on moving average return.
         
-        Returns
-        --------------
+        Args:
+            n_episodes: Number of episodes to train. Defaults to 1000.
+            t_max: Maximum steps per rollout between updates. Defaults to 5.
+            lr_policy: Learning rate for policy network. Defaults to 1e-4.
+            lr_value: Learning rate for value network. Defaults to 1e-4.
+            alpha_entropy: Entropy regularization coefficient. Defaults to 0.1.
+            thresh: Return threshold for early stopping. Defaults to 250.
+            log_dir: Directory for TensorBoard logs. Defaults to 'runs/'.
+            print_iter: Print progress every print_iter episodes. Defaults to 10.
         """
 
         optimizer_policy = optim.Adam(self.policy_network.parameters(), lr=lr_policy)
@@ -266,17 +260,12 @@ class ActorCritic(Agent[np.array, int]):
         print('Training finished without early stopping.')
 
     def save(self, path: str | Path) -> None:
-        """
-        Description
-        --------------
-        Save the weights of the policy and value networks.
+        """Save the policy and value network weights to disk.
         
-        Parameters
-        --------------
-        path : String or Path, path to the directory storing the weights of the policy and value networks.
+        Saves both networks as PyTorch state dictionaries.
         
-        Returns
-        --------------
+        Args:
+            path: Directory path where the network weights will be saved.
         """
 
         os.makedirs(str(path), exist_ok=True)
@@ -287,17 +276,15 @@ class ActorCritic(Agent[np.array, int]):
         torch.save(self.policy_network.state_dict(), path_value)
 
     def load(self, path: str | Path) -> None:
-        """
-        Description
-        --------------
-        Load the weights of the policy and value networks.
+        """Load network weights from disk.
         
-        Parameters
-        --------------
-        path : String or Path, path to the directory storing the weights of the policy and value networks.
+        Restores both policy and value networks from saved state dictionaries.
         
-        Returns
-        --------------
+        Args:
+            path: Directory containing the saved network weights.
+        
+        Raises:
+            ValueError: If the path does not exist or is not a directory.
         """
 
         if not os.path.isdir(str(path)):

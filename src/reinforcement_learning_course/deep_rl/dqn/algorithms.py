@@ -13,8 +13,10 @@ ExperienceSample = tuple[torch.tensor, np.array, torch.tensor, torch.tensor, tor
 
 
 class DQN(Agent[np.array, int]):
-    """
-    DQN agent.
+    """Deep Q-Network (DQN) agent for deep reinforcement learning.
+    
+    Implements DQN with experience replay and target network for off-policy
+    learning. Optionally supports Double Q-learning for reduced overestimation.
     """
 
     def __init__(self, 
@@ -23,18 +25,19 @@ class DQN(Agent[np.array, int]):
                  gamma: float = 0.99, 
                  double_learning: bool = False
                  ) -> None:
-        """
-        Description
-        ------------------------------
-        Constructor.
-
-        Parameters
-        ------------------------------
-        env   : gymnasium environmenty with numpy array observations and integer actions.
-        gamma : Float, discount factor.
-
-        Returns
-        ------------------------------
+        """Initialize the DQN agent.
+        
+        Args:
+            env: Gymnasium environment with numpy array observations and integer actions.
+            max_size: Maximum size of the experience replay buffer. Defaults to 1e5.
+            gamma: Discount factor. Defaults to 0.99.
+            double_learning: If True, use Double Q-learning to reduce overestimation bias.
+              Defaults to False.
+        
+        Attributes:
+            q_network: Main Q-value network.
+            q_network_target: Target network for stable learning.
+            buffer: Experience replay buffer.
         """
 
         super().__init__(env, gamma)
@@ -44,34 +47,30 @@ class DQN(Agent[np.array, int]):
         self.buffer = Memory(max_size)
 
     def make_networks(self) -> tuple[nn.Module, nn.Module]:
-        """
-        Description
-        ------------------------------
-        Make the main and target networks.
-
-        Parameters
-        ------------------------------
-
-        Returns
-        ------------------------------
+        """Create the main and target Q-value networks.
+        
+        Must be implemented by subclasses to specify network architecture.
+        
+        Returns:
+            A tuple containing:
+                - q_network: Main network for learning.
+                - q_network_target: Target network for stable TD updates.
+        
+        Raises:
+            NotImplementedError: Must be implemented by subclasses.
         """
 
         raise NotImplementedError
     
     def action_explore(self, state: np.array, epsilon: float) -> int:
-        """
-        Description
-        --------------
-        Take an action according to the epsilon-greedy policy.
+        """Select an action using epsilon-greedy exploration.
         
-        Arguments
-        --------------
-        state   : np.array, state from a gym environment.
-        epsilon : Float in [0, 1], parameter of the epsilon-greedy policy.
+        Args:
+            state: NumPy array representing the current state.
+            epsilon: Exploration rate in [0, 1] - probability of random action.
         
-        Returns
-        --------------
-        action : Int, action to take.
+        Returns:
+            Integer action selected by epsilon-greedy policy.
         """
         
         bern = np.random.binomial(1, epsilon)
@@ -80,18 +79,13 @@ class DQN(Agent[np.array, int]):
         return self.action(state)
 
     def action(self, state: np.array) -> int:
-        """
-        Description
-        --------------
-        Take the action maximising the highest currently estimated Q-value.
+        """Select the action with the highest Q-value.
         
-        Arguments
-        --------------
-        state : np.array, state from a gym environment.
+        Args:
+            state: NumPy array representing the current state.
         
-        Returns
-        --------------
-        Int, action to take.
+        Returns:
+            Integer action with the maximum Q-value.
         """
         
         with torch.no_grad():
@@ -99,22 +93,18 @@ class DQN(Agent[np.array, int]):
             return torch.argmax(q_values).item()
         
     def sample_batch(self, batch_size: int) -> ExperienceSample:
-        """
-        Description
-        -------------
-        Sample a batch from the replay buffer.
+        """Sample a batch of transitions from the replay buffer.
         
-        Arguments
-        -------------
-        batch_size : Int, the batch size.
+        Args:
+            batch_size: Number of transitions to sample.
         
-        Returns
-        --------------
-        states_batch      : torch.tensor of shape (batch_size, state_shape).
-        actions_batch     : np.array of shape (batch_size,).
-        rewards_batch     : torch.tensor of shape (batch_size, 1).
-        next_states_batch : torch.tensor of shape (batch_size, state_shape).
-        dones_batch       : torch.tensor of shape (batch_size,).
+        Returns:
+            A tuple containing:
+                - states_batch: Tensor of shape (batch_size, state_shape).
+                - actions_batch: Array of shape (batch_size,).
+                - rewards_batch: Tensor of shape (batch_size,).
+                - next_states_batch: Tensor of shape (batch_size, state_shape).
+                - dones_batch: Tensor of shape (batch_size,) with terminal flags.
         """
 
         batch = self.buffer.sample(batch_size)
@@ -131,17 +121,15 @@ class DQN(Agent[np.array, int]):
                          writer: SummaryWriter, 
                          it: int
                          ) -> None:
-        """
-        Description
-        -------------
-        Update the weights of the q network.
+        """Update the Q-network using a batch from the replay buffer.
         
-        Arguments
-        -------------
-        batch_size : Int, the batch size.
+        Computes TD loss and performs gradient update.
         
-        Returns
-        --------------
+        Args:
+            batch_size: Number of transitions to sample for the update.
+            optimizer: PyTorch optimizer for the Q-network.
+            writer: TensorBoard writer for logging.
+            it: Current iteration number for logging.
         """
 
         states_batch, actions_batch, rewards_batch, next_states_batch, dones_batch = self.sample_batch(batch_size)
