@@ -178,7 +178,7 @@ class ActorCritic(Agent[np.array, int]):
 
         loss_policy /= len(states) - 1
         loss_entropy /= len(states) - 1
-        loss = loss_policy + loss_entropy
+        loss = loss_policy + alpha_entropy*loss_entropy
         loss_value /= len(states) - 1
         loss.backward()
         optimizer_policy.step()

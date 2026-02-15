@@ -23,7 +23,7 @@ if __name__ == '__main__':
     args = argparser.parse_args()
 
     # Train
-    env = env = gym.make("CartPole-v1")
+    env = gym.make("CartPole-v1")
     start_time = time()
     agent = agents.CartPoleActorCritic(env, args.gamma)
     start_time = time()
