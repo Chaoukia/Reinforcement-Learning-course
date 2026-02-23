@@ -1,18 +1,13 @@
 import numpy as np
-import os
-from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import multiprocessing as mp
+from threading import BrokenBarrierError
 from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
 from collections import deque
 from reinforcement_learning_course.core import Agent
 from gymnasium import Env
-from typing import Callable
-
-from reinforcement_learning_course.deep_rl.actor_critic.algorithms import ActorCritic
 
 
 class A2CWorker(Agent[np.array, int]):
@@ -149,8 +144,8 @@ class A2CWorker(Agent[np.array, int]):
             A tuple containing:
                 - loss_policy: Loss for policy gradient term.
                 - loss_entropy: Loss for entropy regularization.
-                - loss_total: Total loss (policy + entropy).
-                - loss_value: Loss for value function.
+                - loss_actor: Total loss (policy + entropy).
+                - loss_critic: Loss for value function.
         """
 
         if done:
@@ -162,48 +157,43 @@ class A2CWorker(Agent[np.array, int]):
                 
         optimizer_policy.zero_grad()
         optimizer_value.zero_grad()
-        loss_policy, loss_entropy, loss_value = 0, 0, 0
+        loss_policy, loss_entropy, loss_critic = 0, 0, 0
         for t in range(len(states)-2, -1, -1):
             R = rewards[t] + self.gamma*R
-            delta = R - self.value_network(torch.from_numpy(states[t]))
-            loss_policy += -self.gamma**t*delta.detach()*actions_logprobs[t]
+            advantage = R - self.value_network(torch.from_numpy(states[t]))
+            loss_policy += -self.gamma**t*advantage.detach()*actions_logprobs[t]
             loss_entropy += -entropies[t]
-            loss_value += delta**2
+            loss_critic += advantage**2
 
         loss_policy /= (len(states) - 1)*self.n_workers
         loss_entropy /= (len(states) - 1)*self.n_workers
-        loss = loss_policy + alpha_entropy*loss_entropy
-        loss_value /= (len(states) - 1)*self.n_workers
-        loss.backward()
-        loss_value.backward()
+        loss_actor = loss_policy + alpha_entropy*loss_entropy
+        loss_critic /= (len(states) - 1)*self.n_workers
+        loss_actor.backward()
+        loss_critic.backward()
 
-        return loss_policy.item(), loss_entropy.item(), loss.item(), loss_value.item()
+        return loss_policy.item(), loss_entropy.item(), loss_actor.item(), loss_critic.item()
     
 
-def initalize_worker_parameters(shared_policy_parameters,
-                                shared_value_parameters, 
-                                agent,
-                                ) -> None:
-    
-    for i, param in enumerate(agent.policy_network.parameters()):
-        param_global = shared_policy_parameters[i]
-        param.data = torch.from_numpy(param_global)     # No need to copy, this is more efficient.
-
-    for i, param in enumerate(agent.value_network.parameters()):
-        param_global = shared_value_parameters[i]
-        param.data = torch.from_numpy(param_global)     # No need to copy, this is more efficient.
+def share_adam_optimizer(optimizer):
+    for group in optimizer.param_groups:
+        for param in group["params"]:
+            state = optimizer.state[param]
+            state["step"] = torch.tensor(0.0).share_memory_()
+            state["exp_avg"] = torch.zeros_like(param).share_memory_()
+            state["exp_avg_sq"] = torch.zeros_like(param).share_memory_()
 
 
 def train_a2c_worker(worker_id, 
-                     shared_policy_parameters,
-                     shared_value_parameters, 
+                     policy_network,
+                     value_network, 
+                     policy_optimizer, 
+                     value_optimizer, 
                      env,
                      agent,
                      t_max,
                      n_episodes,
                      alpha_entropy,
-                     lr_policy, 
-                     lr_value,
                      thresh,
                      print_iter,
                      log_dir,
@@ -211,9 +201,8 @@ def train_a2c_worker(worker_id,
                      lock, 
                      ) -> None:
     
-    initalize_worker_parameters(shared_policy_parameters, shared_value_parameters, agent)
-    optimizer_policy = optim.Adam(agent.policy_network.parameters(), lr=lr_policy)
-    optimizer_value = optim.Adam(agent.value_network.parameters(), lr=lr_value)
+    agent.policy_network = policy_network
+    agent.value_network = value_network
     writer = SummaryWriter(log_dir=log_dir)
     rewards_episodes = deque(maxlen=100)
     reward_mean = None
@@ -227,33 +216,33 @@ def train_a2c_worker(worker_id,
             try:
                 barrier.wait()
 
-            except mp.BrokenBarrierError:
+            except BrokenBarrierError:
                 print(f"\nWorker {worker_id}: Barrier was broken, likely due to another worker finishing earlier.")
-                return # Exit the loop because another worker finished earlier
-
+                return # Stop training because one worker finished early
+            
             states, actions_logprobs, rewards, entropies, R, done = agent.unroll(state, t_max)
             reward_episode += R
-            loss_policy, loss_entropy, loss, loss_value = agent.backward(
+            loss_policy, loss_entropy, loss_actor, loss_critic = agent.backward(
                 states, 
                 actions_logprobs, 
                 rewards, 
                 entropies, 
                 done,
                 alpha_entropy, 
-                optimizer_policy, 
-                optimizer_value
-            )
+                policy_optimizer, 
+                value_optimizer,
+            ) 
             state = states[-1]
             writer.add_scalar(f'worker_{worker_id}/loss_policy', loss_policy, it)
             writer.add_scalar(f'worker_{worker_id}/loss_entropy', loss_entropy, it)
-            writer.add_scalar(f'worker_{worker_id}/loss_actor', loss, it)
-            writer.add_scalar(f'worker_{worker_id}/loss_critic', loss_value, it)
+            writer.add_scalar(f'worker_{worker_id}/loss_actor', loss_actor, it)
+            writer.add_scalar(f'worker_{worker_id}/loss_critic', loss_critic, it)
             it += 1
             # Update the global parameters
             with lock:
-                optimizer_policy.step()
-                optimizer_value.step()
-            
+                policy_optimizer.step()
+                value_optimizer.step()
+
         writer.add_scalar(f'worker_{worker_id}/return', reward_episode, episode)
         if len(rewards_episodes) < rewards_episodes.maxlen:
             rewards_episodes.append(reward_episode)
@@ -263,19 +252,11 @@ def train_a2c_worker(worker_id,
             rewards_episodes.append(reward_episode)
             if reward_mean >= thresh:
                 print(f"\nWorker {worker_id} achieved early stopping achieved after {episode} episodes")
-                barrier.abort()
+                barrier.abort()     # Break the barrier because the worker finished
                 return
             
         if episode%print_iter == 0 and reward_mean is not None and worker_id == 0:
             print('Worker : %d , episode : %d , return : %.3F' %(worker_id, episode, reward_mean))
         
     print(f'\nWorker {worker_id} finished training without early stopping.')
-
-
-
-
-    
-
-
-
-
+    barrier.abort()     # Break the barrier because the worker finished
