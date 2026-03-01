@@ -1,23 +1,22 @@
 import argparse
-import numpy as np
 import multiprocessing as mp
 import torch
 import gymnasium as gym
 from reinforcement_learning_course.deep_rl.a2c.examples import agents
-from reinforcement_learning_course.deep_rl.a2c.algorithms import train_a2c_worker
+from reinforcement_learning_course.deep_rl.a2c.algorithms import train_a2c_worker, share_adam_optimizer
 from time import time
 
 
 def train_a2c_cartpole(worker_id, 
-                    shared_policy_parameters,
-                    shared_value_parameters, 
+                    policy_network,
+                    value_network, 
+                    policy_optimizer,
+                    value_optimizer, 
                     gamma,
                     n_workers,
                     t_max,
                     n_episodes,
                     alpha_entropy,
-                    lr_policy, 
-                    lr_value,
                     thresh,
                     print_iter,
                     log_dir,
@@ -28,22 +27,21 @@ def train_a2c_cartpole(worker_id,
     env = gym.make("CartPole-v1")
     agent = agents.CartPoleA2C(env, n_workers, gamma)
     train_a2c_worker(worker_id, 
-                     shared_policy_parameters,
-                     shared_value_parameters, 
+                     policy_network,
+                     value_network, 
+                     policy_optimizer, 
+                     value_optimizer, 
                      env,
                      agent,
                      t_max,
                      n_episodes,
                      alpha_entropy,
-                     lr_policy, 
-                     lr_value,
                      thresh,
                      print_iter,
                      log_dir,
                      barrier, 
                      lock, 
                      )
-    
 
 
 if __name__ == '__main__':
@@ -71,35 +69,30 @@ if __name__ == '__main__':
     start_time = time()
 
     # Initilizing the shared parameters of the policy and value networks.
-    print("\nInitializing the shared parameters")
-    with torch.no_grad():
-        env = gym.make("CartPole-v1")
-        agent = agents.CartPoleA2C(env, args.n_workers, args.gamma)
-        policy_network, value_network = agent.policy_network, agent.value_network
-        shared_policy_parameters, shared_value_parameters = [], []
-        for param in policy_network.parameters():
-            original_shape = param.shape
-            shared_array = mp.Array('f', param.numpy().flatten())
-            shared_np_array = np.frombuffer(shared_array.get_obj(), dtype=np.float32).reshape(original_shape)
-            shared_policy_parameters.append(shared_np_array)
+    print("\nInitializing the shared networks")
+    env = gym.make("CartPole-v1")
+    agent = agents.CartPoleA2C(env, args.n_workers, args.gamma)
+    policy_network, value_network = agent.policy_network, agent.value_network
+    policy_network.share_memory()
+    value_network.share_memory()
 
-        for param in value_network.parameters():
-            original_shape = param.shape
-            shared_array = mp.Array('f', param.numpy().flatten())
-            shared_np_array = np.frombuffer(shared_array.get_obj(), dtype=np.float32).reshape(original_shape)
-            shared_value_parameters.append(shared_np_array)
+    print("\nInitializing the shared optimizers")
+    policy_optimizer = torch.optim.Adam(policy_network.parameters(), lr=args.lr_policy)
+    value_optimizer = torch.optim.Adam(value_network.parameters(), lr=args.lr_value)
+    share_adam_optimizer(policy_optimizer)
+    share_adam_optimizer(value_optimizer)
 
     print("\nInitializing the processes")
     processes = [mp.Process(target=train_a2c_cartpole, args=(i, 
-                                                            shared_policy_parameters,
-                                                            shared_value_parameters, 
+                                                            policy_network,
+                                                            value_network, 
+                                                            policy_optimizer,
+                                                            value_optimizer, 
                                                             args.gamma,
                                                             args.n_workers,
                                                             args.t_max,
                                                             args.n_train,
                                                             args.alpha_entropy,
-                                                            args.lr_policy, 
-                                                            args.lr_value,
                                                             args.thresh,
                                                             args.print_iter,
                                                             args.log_dir,
@@ -121,14 +114,8 @@ if __name__ == '__main__':
     # Test
     env = gym.make("CartPole-v1", render_mode='human')
     agent.set_env(env)
-
-    # Set the weights of the global agent to those converged to by the workers
-    for i, param in enumerate(agent.policy_network.parameters()):
-        param.data = torch.from_numpy(shared_policy_parameters[i])
-
-    for i, param in enumerate(agent.value_network.parameters()):
-        param.data = torch.from_numpy(shared_value_parameters[i])
-        
+    agent.policy_network = policy_network
+    agent.value_network = value_network
     agent.test(args.n_test, verbose=args.verbose)
     env.close()
     
