@@ -17,7 +17,7 @@ class A2CWorker(Agent[np.array, int]):
                  n_workers: int, 
                  gamma: float = 0.99
                  ) -> None:
-        """Initialize the Actor-Critic agent.
+        """Initialize the A2C worker.
         
         Args:
             env: Gymnasium environment with numpy array observations and integer actions.
