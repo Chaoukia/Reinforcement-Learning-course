@@ -1,13 +1,14 @@
 import itertools
+import os
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
 from threading import BrokenBarrierError
 from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
 from collections import deque
+from pathlib import Path
 from reinforcement_learning_course.core import Agent
 from gymnasium import Env
 
@@ -28,15 +29,15 @@ class PPOWorker(Agent[np.array, int]):
             gamma: Discount factor. Defaults to 0.99.
         
         Attributes:
-            policy_network: Neural network representing the actor (policy).
-            value_network: Neural network representing the critic (value function).
+            actor_network: Neural network representing the actor (policy).
+            critic_network: Neural network representing the critic (value function).
         """
 
         super().__init__(env, gamma)
         self.n_workers = n_workers
         self.epsilon = epsilon
         self.lambd = lambd
-        self.policy_network, self.value_network = self.make_networks()
+        self.actor_network, self.critic_network = self.make_networks()
 
     def make_networks(self) -> tuple[nn.Module, nn.Module]:
         """
@@ -59,7 +60,7 @@ class PPOWorker(Agent[np.array, int]):
         """
 
         with torch.no_grad():
-            logits = self.policy_network(torch.from_numpy(state))
+            logits = self.actor_network(torch.from_numpy(state))
             dist = Categorical(logits=logits)
             action = dist.sample()
             action_prob = dist.probs[action]
@@ -78,7 +79,7 @@ class PPOWorker(Agent[np.array, int]):
         """
 
         with torch.no_grad():
-            logits = self.policy_network(torch.from_numpy(state))
+            logits = self.actor_network(torch.from_numpy(state))
             dist = Categorical(logits=logits)
             action = dist.sample()
             return action.item()
@@ -141,7 +142,7 @@ class PPOWorker(Agent[np.array, int]):
         advantage = 0
         # If done, do not calculate the value of the last state, it is terminal and thus its value is 0
         with torch.no_grad():
-            state_values = self.value_network(torch.from_numpy(np.array(states)))
+            state_values = self.critic_network(torch.from_numpy(np.array(states)))
 
         V_next_state = 0 if done else state_values[-1].item()
         for t in range(len(states)-2, -1, -1):
@@ -188,7 +189,7 @@ class PPOWorker(Agent[np.array, int]):
         """
 
         # Take the softmax along dim=1 to transform logits into probabilities.
-        policy_probs = torch.softmax(self.policy_network(torch.from_numpy(np.array(states[:-1]))), dim=1)
+        policy_probs = torch.softmax(self.actor_network(torch.from_numpy(np.array(states[:-1]))), dim=1)
         # Action probabilities according to the current policy
         actions_probs = policy_probs[range(policy_probs.shape[0]), actions]
         actions_probs_old_tensor = torch.from_numpy(np.array(actions_probs_old))
@@ -205,14 +206,51 @@ class PPOWorker(Agent[np.array, int]):
 
         loss_entropy /= (len(states)-1)
         loss_actor = loss_policy + alpha_entropy*loss_entropy
-        state_values = self.value_network(torch.from_numpy(np.array(states[:-1])))
+        state_values = self.critic_network(torch.from_numpy(np.array(states[:-1])))
         state_values_target = state_values_old + advantages_tensor.unsqueeze(1)
-        loss_critic = F.huber_loss(state_values, state_values_target)
+        loss_critic = F.smooth_l1_loss(state_values, state_values_target)
         with lock:
             loss_actor.backward()
             loss_critic.backward()
 
         return loss_policy.item(), loss_entropy.item(), loss_actor.item(), loss_critic.item()
+
+    def save(self, path: str | Path) -> None:
+        """Save the policy and value network weights to disk.
+        
+        Saves both networks as PyTorch state dictionaries.
+        
+        Args:
+            path: Directory path where the network weights will be saved.
+        """
+
+        os.makedirs(str(path), exist_ok=True)
+        path = Path(path)
+        path_actor = path / "actor.pt"
+        path_critic = path / "critic.pt"
+        torch.save(self.actor_network.state_dict(), path_actor)
+        torch.save(self.actor_network.state_dict(), path_critic)
+
+    def load(self, path: str | Path) -> None:
+        """Load network weights from disk.
+        
+        Restores both policy and value networks from saved state dictionaries.
+        
+        Args:
+            path: Directory containing the saved network weights.
+        
+        Raises:
+            ValueError: If the path does not exist or is not a directory.
+        """
+
+        if not os.path.isdir(str(path)):
+            raise ValueError(f"{str(path)} is not a directory")
+        
+        path = Path(path)
+        path_actor = path / "actor.pt"
+        path_critic = path / "critic.pt"
+        self.actor_network.load_state_dict(torch.load(path_actor))
+        self.critic_network.load_state_dict(torch.load(path_critic))
     
 
 def reset_shared_advantages(shared_advantages: np.array) -> None:
@@ -265,8 +303,8 @@ def train_ppo_worker(worker_id,
                      advantage_mean, 
                      advantage_std,
                      n_advantages_total,
-                     policy_network,
-                     value_network, 
+                     actor_network,
+                     critic_network, 
                      policy_optimizer, 
                      value_optimizer, 
                      env,
@@ -282,10 +320,11 @@ def train_ppo_worker(worker_id,
                      lock, 
                      ) -> None:
     
-    agent.policy_network = policy_network
-    agent.value_network = value_network
+    torch.set_num_threads(1)
+    agent.actor_network = actor_network
+    agent.critic_network = critic_network
     writer = SummaryWriter(log_dir=log_dir)
-    rewards_episodes = deque(maxlen=10)
+    rewards_episodes = deque(maxlen=100)
     reward_mean = None
     it = 0
     for episode in range(n_episodes):
@@ -351,8 +390,8 @@ def train_ppo_worker(worker_id,
                 # Wait for all workers to do a backward pass before performing a gradient update.
                 barrier.wait()
                 if worker_id == 0:
-                    torch.nn.utils.clip_grad_norm_(policy_network.parameters(), max_norm=0.5)
-                    torch.nn.utils.clip_grad_norm_(value_network.parameters(), max_norm=0.5)
+                    torch.nn.utils.clip_grad_norm_(actor_network.parameters(), max_norm=0.5)
+                    torch.nn.utils.clip_grad_norm_(critic_network.parameters(), max_norm=0.5)
                     policy_optimizer.step()
                     value_optimizer.step()
                     policy_optimizer.zero_grad()
