@@ -18,6 +18,7 @@ class LunarLanderPPO(PPOWorker):
 
     def __init__(self, 
                  env: Env[np.array, int], 
+                 worker_id: int,
                  n_workers: int,
                  epsilon: float,
                  lambd: float,
@@ -36,7 +37,7 @@ class LunarLanderPPO(PPOWorker):
         Returns
         ------------------------------
         """
-        super().__init__(env, n_workers, epsilon, lambd, gamma)
+        super().__init__(env, worker_id, n_workers, epsilon, lambd, gamma)
 
     def make_networks(self) -> tuple[nn.Module, nn.Module]:
         """
@@ -65,6 +66,7 @@ class CartPolePPO(PPOWorker):
 
     def __init__(self, 
                  env: Env[np.array, int], 
+                 worker_id: int,
                  n_workers: int,
                  epsilon: float,
                  lambd: float,
@@ -83,7 +85,7 @@ class CartPolePPO(PPOWorker):
         Returns
         ------------------------------
         """
-        super().__init__(env, n_workers, epsilon, lambd, gamma)
+        super().__init__(env, worker_id, n_workers, epsilon, lambd, gamma)
 
     def make_networks(self) -> tuple[nn.Module, nn.Module]:
         """
@@ -111,6 +113,7 @@ class MountainCarPPO(PPOWorker):
 
     def __init__(self, 
                  env: Env[np.array, int], 
+                 worker_id: int,
                  n_workers: int,
                  epsilon: float,
                  lambd: float,
@@ -129,7 +132,7 @@ class MountainCarPPO(PPOWorker):
         Returns
         ------------------------------
         """
-        super().__init__(env, n_workers, epsilon, lambd, gamma)
+        super().__init__(env, worker_id, n_workers, epsilon, lambd, gamma)
 
     def make_networks(self) -> tuple[nn.Module, nn.Module]:
         """
@@ -157,6 +160,7 @@ class AcrobotPPO(PPOWorker):
 
     def __init__(self, 
                  env: Env[np.array, int], 
+                 worker_id: int, 
                  n_workers: int,
                  epsilon: float,
                  lambd: float,
@@ -175,7 +179,7 @@ class AcrobotPPO(PPOWorker):
         Returns
         ------------------------------
         """
-        super().__init__(env, n_workers, epsilon, lambd, gamma)
+        super().__init__(env, worker_id, n_workers, epsilon, lambd, gamma)
 
     def make_networks(self) -> tuple[nn.Module, nn.Module]:
         """

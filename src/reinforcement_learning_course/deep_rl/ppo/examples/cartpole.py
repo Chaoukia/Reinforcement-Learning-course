@@ -12,7 +12,6 @@ def train_ppo_cartpole(worker_id,
                     shared_advantages,
                     advantage_mean, 
                     advantage_std,
-                    n_advantages_total,
                     actor_network,
                     critic_network, 
                     policy_optimizer,
@@ -22,7 +21,8 @@ def train_ppo_cartpole(worker_id,
                     gamma,
                     n_workers,
                     t_max,
-                    n_episodes,
+                    n_train,
+                    batch_size,
                     alpha_entropy,
                     epochs,
                     thresh,
@@ -33,12 +33,10 @@ def train_ppo_cartpole(worker_id,
                     ) -> None:
     
     env = gym.make("CartPole-v1")
-    agent = agents.CartPolePPO(env, n_workers, epsilon, lambd, gamma)
-    train_ppo_worker(worker_id, 
-                     shared_advantages,
+    agent = agents.CartPolePPO(env, worker_id, n_workers, epsilon, lambd, gamma)
+    train_ppo_worker(shared_advantages,
                      advantage_mean, 
                      advantage_std,
-                     n_advantages_total,
                      actor_network,
                      critic_network, 
                      policy_optimizer, 
@@ -46,7 +44,8 @@ def train_ppo_cartpole(worker_id,
                      env,
                      agent,
                      t_max,
-                     n_episodes,
+                     n_train,
+                     batch_size,
                      alpha_entropy,
                      epochs,
                      thresh,
@@ -76,6 +75,7 @@ if __name__ == '__main__':
     argparser.add_argument('--lr_critic', type=float, default=1e-4, help="Learning rate for the value network.")
     argparser.add_argument('--alpha_entropy', type=float, default=1.0, help="Penalty on the entropy loss term.")
     argparser.add_argument('--epochs', type=int, default=4, help="Number of epochs.")
+    argparser.add_argument('--batch_size', type=int, default=6, help="Batch size.")
     argparser.add_argument('--thresh', type=float, default=400, help="Minimum mean reward to stop training.")
     argparser.add_argument('--log_dir', type=str, default='runs', help="Path where to log the tensorboard runs.")
     argparser.add_argument('--n_test', type=int, default=10, help="Number of test episodes.")
@@ -93,7 +93,7 @@ if __name__ == '__main__':
     # Initilizing the shared parameters of the policy and value networks.
     print("\nInitializing the shared networks")
     env = gym.make("CartPole-v1")
-    agent = agents.CartPolePPO(env, args.n_workers, args.epsilon, args.lambd, args.gamma)
+    agent = agents.CartPolePPO(env, 0, args.n_workers, args.epsilon, args.lambd, args.gamma)
     actor_network, critic_network = agent.actor_network, agent.critic_network
     actor_network.share_memory()
     critic_network.share_memory()
@@ -117,7 +117,6 @@ if __name__ == '__main__':
                                                             shared_advantages,
                                                             advantage_mean, 
                                                             advantage_std,
-                                                            n_advantages_total,
                                                             actor_network,
                                                             critic_network, 
                                                             policy_optimizer,
@@ -128,6 +127,7 @@ if __name__ == '__main__':
                                                             args.n_workers,
                                                             args.t_max,
                                                             args.n_train,
+                                                            args.batch_size,
                                                             args.alpha_entropy,
                                                             args.epochs,
                                                             args.thresh,

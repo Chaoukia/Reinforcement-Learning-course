@@ -23,9 +23,9 @@ class LunarLanderPolicyNetwork(nn.Module):
 
         super().__init__()
         self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(8, 512)), 
-                                              ('relu1', nn.ReLU()), 
+                                              ('relu1', nn.Tanh()), 
                                               ('linear2', nn.Linear(512, 256)), 
-                                              ('relu2', nn.ReLU()), 
+                                              ('relu2', nn.Tanh()), 
                                               ('linear3', nn.Linear(256, 4))]))
         
     def forward(self, x: torch.tensor) -> torch.tensor:
@@ -66,9 +66,9 @@ class LunarLanderValueNetwork(nn.Module):
 
         super().__init__()
         self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(8, 512)), 
-                                              ('relu1', nn.ReLU()), 
+                                              ('relu1', nn.Tanh()), 
                                               ('linear2', nn.Linear(512, 256)), 
-                                              ('relu2', nn.ReLU()), 
+                                              ('relu2', nn.Tanh()), 
                                               ('linear3', nn.Linear(256, 1))]))
         
     def forward(self, x: torch.tensor) -> torch.tensor:
@@ -109,9 +109,9 @@ class CartPolePolicyNetwork(nn.Module):
 
         super().__init__()
         self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(4, 512)), 
-                                              ('relu1', nn.ReLU()), 
+                                              ('relu1', nn.Tanh()), 
                                               ('linear2', nn.Linear(512, 256)), 
-                                              ('relu2', nn.ReLU()), 
+                                              ('relu2', nn.Tanh()), 
                                               ('linear3', nn.Linear(256, 2))]))
         
     def forward(self, x):
@@ -152,9 +152,9 @@ class CartPoleValueNetwork(nn.Module):
 
         super().__init__()
         self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(4, 512)), 
-                                              ('relu1', nn.ReLU()), 
+                                              ('relu1', nn.Tanh()), 
                                               ('linear2', nn.Linear(512, 256)), 
-                                              ('relu2', nn.ReLU()), 
+                                              ('relu2', nn.Tanh()), 
                                               ('linear3', nn.Linear(256, 1))]))
         
     def forward(self, x):
@@ -195,9 +195,9 @@ class MountainCarPolicyNetwork(nn.Module):
 
         super().__init__()
         self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(2, 512)), 
-                                              ('relu1', nn.ReLU()), 
+                                              ('relu1', nn.Tanh()), 
                                               ('linear2', nn.Linear(512, 256)), 
-                                              ('relu2', nn.ReLU()), 
+                                              ('relu2', nn.Tanh()), 
                                               ('linear3', nn.Linear(256, 3))]))
         
     def forward(self, x):
@@ -238,9 +238,9 @@ class MountainCarValueNetwork(nn.Module):
 
         super().__init__()
         self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(2, 512)), 
-                                              ('relu1', nn.ReLU()), 
+                                              ('relu1', nn.Tanh()), 
                                               ('linear2', nn.Linear(512, 256)), 
-                                              ('relu2', nn.ReLU()), 
+                                              ('relu2', nn.Tanh()), 
                                               ('linear3', nn.Linear(256, 1))]))
         
     def forward(self, x):
@@ -281,9 +281,9 @@ class AcrobotPolicyNetwork(nn.Module):
 
         super().__init__()
         self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(6, 512)), 
-                                              ('relu1', nn.ReLU()), 
+                                              ('relu1', nn.Tanh()), 
                                               ('linear2', nn.Linear(512, 256)), 
-                                              ('relu2', nn.ReLU()), 
+                                              ('relu2', nn.Tanh()), 
                                               ('linear3', nn.Linear(256, 3))]))
         
     def forward(self, x):
@@ -324,9 +324,9 @@ class AcrobotValueNetwork(nn.Module):
 
         super().__init__()
         self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(6, 512)), 
-                                              ('relu1', nn.ReLU()), 
+                                              ('relu1', nn.Tanh()), 
                                               ('linear2', nn.Linear(512, 256)), 
-                                              ('relu2', nn.ReLU()), 
+                                              ('relu2', nn.Tanh()), 
                                               ('linear3', nn.Linear(256, 1))]))
         
     def forward(self, x):
