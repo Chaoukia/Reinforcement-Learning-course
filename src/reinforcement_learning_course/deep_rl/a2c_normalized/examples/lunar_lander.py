@@ -8,15 +8,15 @@ from reinforcement_learning_course.deep_rl.a2c_normalized.algorithms import trai
 from time import time
 
 
-def train_a2c_lunar_lander(worker_id, 
+def train_a2c_lunar_lander(worker_id,
                         shared_advantages,
-                        advantage_mean, 
+                        advantage_mean,
                         advantage_std,
                         n_advantages_total,
                         policy_network,
-                        value_network, 
+                        value_network,
                         policy_optimizer,
-                        value_optimizer, 
+                        value_optimizer,
                         gamma,
                         n_workers,
                         t_max,
@@ -25,10 +25,35 @@ def train_a2c_lunar_lander(worker_id,
                         thresh,
                         print_iter,
                         log_dir,
-                        barrier, 
-                        lock, 
+                        barrier,
+                        lock,
                         ) -> None:
-    
+    """Worker function for A2C normalized training on LunarLander-v3.
+
+    Creates a LunarLander environment and A2C agent with normalized advantages,
+    then delegates to train_a2c_worker. Intended to be spawned as a separate process.
+
+    Args:
+        worker_id: Integer identifier for this worker process.
+        shared_advantages: Shared array for storing advantages across workers.
+        advantage_mean: Shared value for the running advantage mean.
+        advantage_std: Shared value for the running advantage standard deviation.
+        n_advantages_total: Shared counter tracking total advantages gathered.
+        policy_network: Shared policy network across all workers.
+        value_network: Shared value network across all workers.
+        policy_optimizer: Shared optimizer for the policy network.
+        value_optimizer: Shared optimizer for the value network.
+        gamma: Discount factor.
+        n_workers: Total number of parallel workers.
+        t_max: Maximum number of steps between gradient updates.
+        n_episodes: Maximum number of training episodes.
+        alpha_entropy: Entropy regularization coefficient.
+        thresh: Mean return threshold for early stopping.
+        print_iter: Number of episodes between progress prints.
+        log_dir: Directory for TensorBoard logs.
+        barrier: Synchronization barrier shared across workers.
+        lock: Mutex lock for safe gradient accumulation.
+    """
     env = gym.make("LunarLander-v3", continuous=False, gravity=-10.0,enable_wind=False, wind_power=0.0, turbulence_power=0.0)
     agent = agents.LunarLanderA2C(env, n_workers, gamma)
     train_a2c_worker(worker_id, 

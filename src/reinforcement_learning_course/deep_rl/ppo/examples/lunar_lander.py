@@ -8,15 +8,15 @@ from reinforcement_learning_course.deep_rl.ppo.algorithms import train_ppo_worke
 from time import time
 
 
-def train_ppo_lunar_lander(worker_id, 
+def train_ppo_lunar_lander(worker_id,
                     shared_advantages,
-                    advantage_mean, 
+                    advantage_mean,
                     advantage_std,
                     actor_network,
-                    critic_network, 
+                    critic_network,
                     policy_optimizer,
-                    value_optimizer, 
-                    epsilon, 
+                    value_optimizer,
+                    epsilon,
                     lambd,
                     gamma,
                     n_workers,
@@ -28,10 +28,38 @@ def train_ppo_lunar_lander(worker_id,
                     thresh,
                     print_iter,
                     log_dir,
-                    barrier, 
-                    lock, 
+                    barrier,
+                    lock,
                     ) -> None:
-    
+    """Worker function for PPO training on LunarLander-v3.
+
+    Creates a LunarLander environment and PPO agent, then delegates to train_ppo_worker.
+    Intended to be spawned as a separate process in multi-worker PPO training.
+
+    Args:
+        worker_id: Integer identifier for this worker process.
+        shared_advantages: Shared array for storing advantages across all workers.
+        advantage_mean: Shared value for the normalized advantage mean.
+        advantage_std: Shared value for the normalized advantage standard deviation.
+        actor_network: Shared actor (policy) network across all workers.
+        critic_network: Shared critic (value) network across all workers.
+        policy_optimizer: Shared optimizer for the actor network.
+        value_optimizer: Shared optimizer for the critic network.
+        epsilon: PPO clipping parameter controlling policy update size.
+        lambd: GAE lambda parameter for advantage estimation.
+        gamma: Discount factor.
+        n_workers: Total number of parallel workers.
+        t_max: Number of environment steps collected per update iteration.
+        n_train: Maximum number of training iterations.
+        batch_size: Mini-batch size for PPO gradient updates.
+        alpha_entropy: Entropy regularization coefficient.
+        epochs: Number of optimization epochs per collected trajectory.
+        thresh: Mean return threshold for early stopping.
+        print_iter: Number of episodes between progress prints.
+        log_dir: Directory for TensorBoard logs.
+        barrier: Synchronization barrier shared across workers.
+        lock: Mutex lock for safe gradient accumulation.
+    """
     env = gym.make("LunarLander-v3", continuous=False, gravity=-10.0,enable_wind=False, wind_power=0.0, turbulence_power=0.0)
     agent = agents.LunarLanderPPO(env, worker_id, n_workers, epsilon, lambd, gamma)
     train_ppo_worker(

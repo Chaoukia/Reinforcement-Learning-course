@@ -4,7 +4,7 @@ from reinforcement_learning_course.monte_carlo import algorithms as algs
 from time import time
 
 if __name__ == '__main__':
-    
+
     argparser = argparse.ArgumentParser(description='Parse options')
 
     argparser.add_argument('--gamma', type=float, default=0.99, help="Discount factor of the MDP.")
@@ -18,7 +18,7 @@ if __name__ == '__main__':
     argparser.add_argument('--n_test', type=int, default=5, help="Number of test episodes.")
     argparser.add_argument('--verbose', type=str, choices=['no', 'yes'], default='yes', help="Whether to print each episode evaluation during the test phase.")
     argparser.add_argument('--path_gif', type=str, help="Path where to save the test gif. If not provided, no gif save will be performed.")
-    
+
     args = argparser.parse_args()
 
     first_visit = args.first_visit == 'yes'
@@ -30,13 +30,13 @@ if __name__ == '__main__':
     agent = algs.MonteCarlo(env, args.gamma)
     agent.train(args.epsilon_start, args.epsilon_stop, args.decay_rate, args.n_train, first_visit, args.print_iter)
     print('Execution time :', time() - start_time)
-    
+
     # Test.
     env = gym.make('CliffWalking-v1', max_episode_steps=args.max_steps, render_mode='human')
     agent.set_env(env)
     agent.test(args.n_test, verbose=args.verbose)
     env.close()
-    
+
     # Save gif.
     if args.path_gif is not None:
         env = gym.make('CliffWalking-v1', max_episode_steps=args.max_steps, render_mode='rgb_array')

@@ -2,178 +2,113 @@ import numpy as np
 import torch.nn as nn
 from reinforcement_learning_course.deep_rl.reinforce.algorithms import Reinforce
 from reinforcement_learning_course.deep_rl.reinforce.examples.neural_networks import (
-    LunarLanderNetwork, 
-    CartPoleNetwork, 
-    MountainCarNetwork, 
+    LunarLanderNetwork,
+    CartPoleNetwork,
+    MountainCarNetwork,
     AcrobotNetwork
 )
 from gymnasium import Env
 
 
 class LunarLanderReinforce(Reinforce):
-    """
-    Reinforce LunarLander agent.
-    """
+    """REINFORCE agent for the LunarLander environment."""
 
-    def __init__(self, 
-                 env: Env[np.array, int], 
+    def __init__(self,
+                 env: Env[np.array, int],
                  gamma: float = 0.99
                  ) -> None:
-        """
-        Description
-        ------------------------------
-        Constructor.
+        """Initializes the LunarLanderReinforce agent.
 
-        Parameters
-        ------------------------------
-        env      : gymnasium lunar lander environment.
-        gamma    : Float, discount factor.
-
-        Returns
-        ------------------------------
+        Args:
+            env: Gymnasium LunarLander environment.
+            gamma: Discount factor.
         """
         super().__init__(env, gamma)
 
     def make_networks(self) -> nn.Module:
-        """
-        Description
-        ------------------------------
-        Initialize the policy network.
+        """Initializes the policy network.
 
-        Parameters
-        ------------------------------
-
-        Returns
-        ------------------------------
-        policy_network : nn.Module, policy network.
+        Returns:
+            The LunarLander policy network.
         """
 
         policy_network = LunarLanderNetwork()
         return policy_network
-        
+
 
 class CartPoleReinforce(Reinforce):
-    """
-    Reinforce CartPole agent.
-    """
+    """REINFORCE agent for the CartPole environment."""
 
-    def __init__(self, 
-                 env: Env[np.array, int], 
+    def __init__(self,
+                 env: Env[np.array, int],
                  gamma: float = 0.99
                  ) -> None:
-        """
-        Description
-        ------------------------------
-        Constructor.
+        """Initializes the CartPoleReinforce agent.
 
-        Parameters
-        ------------------------------
-        env      : gymnasium cartpole environment.
-        gamma    : Float, discount factor.
-
-        Returns
-        ------------------------------
+        Args:
+            env: Gymnasium CartPole environment.
+            gamma: Discount factor.
         """
         super().__init__(env, gamma)
 
     def make_networks(self) -> nn.Module:
-        """
-        Description
-        ------------------------------
-        Make the main and target networks.
+        """Initializes the policy network.
 
-        Parameters
-        ------------------------------
-
-        Returns
-        ------------------------------
-        policy_network : nn.Module, policy network.
+        Returns:
+            The CartPole policy network.
         """
 
         policy_network = CartPoleNetwork()
         return policy_network
-    
+
 
 class MountainCarReinforce(Reinforce):
-    """
-    Reinforce MountainCar agent.
-    """
+    """REINFORCE agent for the MountainCar environment."""
 
-    def __init__(self, 
-                 env: Env[np.array, int], 
-                 gamma: float = 0.99, 
+    def __init__(self,
+                 env: Env[np.array, int],
+                 gamma: float = 0.99,
                  ) -> None:
-        """
-        Description
-        ------------------------------
-        Constructor.
+        """Initializes the MountainCarReinforce agent.
 
-        Parameters
-        ------------------------------
-        env      : gymnasium mountain-car environment.
-        gamma    : Float, discount factor.
-
-        Returns
-        ------------------------------
+        Args:
+            env: Gymnasium MountainCar environment.
+            gamma: Discount factor.
         """
         super().__init__(env, gamma)
 
     def make_networks(self) -> nn.Module:
-        """
-        Description
-        ------------------------------
-        Make the main and target networks.
+        """Initializes the policy network.
 
-        Parameters
-        ------------------------------
-
-        Returns
-        ------------------------------
-        policy_network : nn.Module, policy network.
+        Returns:
+            The MountainCar policy network.
         """
 
         policy_network = MountainCarNetwork()
         return policy_network
-    
+
 
 class AcrobotReinforce(Reinforce):
-    """
-    Reinforce Acrobot agent.
-    """
+    """REINFORCE agent for the Acrobot environment."""
 
-    def __init__(self, 
-                 env: Env[np.array, int], 
-                 gamma: float = 0.99, 
+    def __init__(self,
+                 env: Env[np.array, int],
+                 gamma: float = 0.99,
                  ) -> None:
-        """
-        Description
-        ------------------------------
-        Constructor.
+        """Initializes the AcrobotReinforce agent.
 
-        Parameters
-        ------------------------------
-        env      : gymnasium acrobot environment.
-        gamma    : Float, discount factor.
-
-        Returns
-        ------------------------------
+        Args:
+            env: Gymnasium Acrobot environment.
+            gamma: Discount factor.
         """
         super().__init__(env, gamma)
 
     def make_networks(self) -> nn.Module:
-        """
-        Description
-        ------------------------------
-        Make the main and target networks.
+        """Initializes the policy network.
 
-        Parameters
-        ------------------------------
-
-        Returns
-        ------------------------------
-        policy_netywork : nn.Module, policy network.
+        Returns:
+            The Acrobot policy network.
         """
 
         policy_netywork = AcrobotNetwork()
         return policy_netywork
-    

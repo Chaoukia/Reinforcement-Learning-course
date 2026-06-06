@@ -66,7 +66,7 @@ class Agent(Generic[ObsType, ActType]):
     def test(self, n_episodes: int = 1000, verbose: bool = False) -> tuple[float, float]:
         """Test the agent's performance over multiple episodes.
         
-        Evaluates the agent's policy without learning by running episodes and collecting
+        Evaluates the agent's policy by running episodes and collecting
         return statistics.
         
         Args:
@@ -90,7 +90,6 @@ class Agent(Generic[ObsType, ActType]):
                 next_state, reward, terminated, truncated, _ = self.env.step(action)
                 done = (terminated or truncated)
                 state = next_state
-                # R += reward*self.gamma**n_steps
                 R += reward
                 n_steps += 1
                 

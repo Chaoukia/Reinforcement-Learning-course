@@ -3,21 +3,15 @@ from gymnasium.core import Env
 
 
 def frozen_lake_transition_matrices(env: Env[int, int]) -> tuple[np.array, np.array]:
-    """
-    Description
-    ------------------------------
-    Generate the probability and reward transition matrices for the frozen lake environment.
+    """Generate the probability and reward transition matrices for the frozen lake environment.
 
-    Parameters
-    ------------------------------
-    env : Env, a frozen lake gymnasium environment
+    Args:
+        env: A frozen lake gymnasium environment.
 
-    Returns
-    ------------------------------
-    p_transition : np.array of shape (n_state, n_actions, n_states), the transition probabilities matrix.
-    r_transition : np.array of shape (n_state, n_actions, n_states), the transition rewards matrix.
-    n_states     : Int, number of states.
-    n_actions    : Int, number of actions.
+    Returns:
+        A tuple of two arrays:
+            - p_transition: np.array of shape (n_states, n_actions, n_states), the transition probabilities matrix.
+            - r_transition: np.array of shape (n_states, n_actions, n_states), the transition rewards matrix.
     """
 
     n_states, n_actions = env.observation_space.n, env.action_space.n
@@ -30,7 +24,7 @@ def frozen_lake_transition_matrices(env: Env[int, int]) -> tuple[np.array, np.ar
         # Holes are absorbing states.
         if map[state_index] == 'H':
             p_transition[state, :, state] = 1
-            
+
         else:
             for action in range(n_actions):
                 if action == 0: # Go left.
@@ -108,7 +102,7 @@ def frozen_lake_transition_matrices(env: Env[int, int]) -> tuple[np.array, np.ar
                     next_state_index[1] = min(shape[1] - 1, next_state_index[1] + 1)
                     next_state = next_state_index[0]*shape[0] + next_state_index[1]
                     p_transition[state, action, next_state] += 1/3
-            
+
                 for next_state in range(n_states):
                     next_state_index = np.unravel_index(next_state, shape)
                     if map[next_state_index] == 'G':
@@ -118,23 +112,17 @@ def frozen_lake_transition_matrices(env: Env[int, int]) -> tuple[np.array, np.ar
 
 
 def cliff_walking_transition_matrices(env: Env[int, int]) -> tuple[np.array, np.array]:
-    """
-    Description
-    ------------------------------
-    Generate the probability and reward transition matrices for the cliff walking environment
+    """Generate the probability and reward transition matrices for the cliff walking environment.
 
-    Parameters
-    ------------------------------
-    env : Env, a cliff walking gymnasium environment
+    Args:
+        env: A cliff walking gymnasium environment.
 
-    Returns
-    ------------------------------
-    p_transition : np.array of shape (n_state, n_actions, n_states), the transition probabilities matrix.
-    r_transition : np.array of shape (n_state, n_actions, n_states), the transition rewards matrix.
-    n_states     : Int, number of states.
-    n_actions    : Int, number of actions.
+    Returns:
+        A tuple of two arrays:
+            - p_transition: np.array of shape (n_states, n_actions, n_states), the transition probabilities matrix.
+            - r_transition: np.array of shape (n_states, n_actions, n_states), the transition rewards matrix.
     """
-    
+
     n_states, n_actions = env.observation_space.n, env.action_space.n
     shape = (4, 12)
 
@@ -144,7 +132,7 @@ def cliff_walking_transition_matrices(env: Env[int, int]) -> tuple[np.array, np.
         # Going over the cliff sends us back immediately to the initial state.
         if state_index[0] == 3 and state_index[1] in set(range(1, 11)):
             p_transition[state, :, 36] = 1
-            
+
         # The goal state is an absorbing state.
         elif state_index == (3, 11):
             p_transition[state, :, state] = 1
@@ -171,32 +159,26 @@ def cliff_walking_transition_matrices(env: Env[int, int]) -> tuple[np.array, np.
                     next_state_index = (state_index[0], max(0, state_index[1] - 1))
                     next_state = next_state_index[0]*shape[1] + next_state_index[1]
                     p_transition[state, action, next_state] = 1
-            
+
                 for next_state in range(n_states):
                     next_state_index = np.unravel_index(next_state, shape)
                     # Going over the cliff incurs -100 reward.
                     if next_state_index[0] == 3 and next_state_index[1] in set(range(1, 11)):
                         r_transition[state, action, next_state] = -100
-                    
+
     return p_transition, r_transition
 
 
 def taxi_transition_matrices(env: Env[int, int]) -> tuple[np.array, np.array]:
-    """
-    Description
-    ------------------------------
-    Generate the probability and reward transition matrices for the taxi enviromnent.
+    """Generate the probability and reward transition matrices for the taxi environment.
 
-    Parameters
-    ------------------------------
-    env : Env, a taxi gymnasium environment
+    Args:
+        env: A taxi gymnasium environment.
 
-    Returns
-    ------------------------------
-    p_transition : np.array of shape (n_state, n_actions, n_states), the transition probabilities matrix.
-    r_transition : np.array of shape (n_state, n_actions, n_states), the transition rewards matrix.
-    n_states     : Int, number of states.
-    n_actions    : Int, number of actions.
+    Returns:
+        A tuple of two arrays:
+            - p_transition: np.array of shape (n_states, n_actions, n_states), the transition probabilities matrix.
+            - r_transition: np.array of shape (n_states, n_actions, n_states), the transition rewards matrix.
     """
 
     n_states, n_actions = env.observation_space.n + 1, env.action_space.n
@@ -206,7 +188,7 @@ def taxi_transition_matrices(env: Env[int, int]) -> tuple[np.array, np.array]:
         # n_states-1 is the absorbing state.
         if state == n_states - 1:
             p_transition[state, :, state] = 1
-            
+
         else:
             taxi_row, taxi_col, passenger_loc, destination = env.unwrapped.decode(state)
             action_mask = env.unwrapped.action_mask(state)
@@ -251,5 +233,5 @@ def taxi_transition_matrices(env: Env[int, int]) -> tuple[np.array, np.array]:
 
                     else:
                         r_transition[state, action, n_states - 1] = -10
-                    
+
     return p_transition, r_transition

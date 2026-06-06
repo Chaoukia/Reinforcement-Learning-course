@@ -118,11 +118,7 @@ class TemporalDifference(Agent[int, int]):
 
 
 class SARSA(TemporalDifference):
-    """SARSA (State-Action-Reward-State-Action) on-policy TD learning agent.
-    
-    Implements the SARSA algorithm which learns the value of the policy being
-    followed by using the next state-action pair to bootstrap.
-    """
+    """SARSA on-policy TD learning agent"""
 
     def __init__(self, env: Env[int, int], gamma: float = 0.99):
         """Initialize the SARSA agent.

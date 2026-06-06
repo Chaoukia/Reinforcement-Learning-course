@@ -12,18 +12,30 @@ from gymnasium import Env
 
 
 class A2CWorker(Agent[np.array, int]):
+    """Base class for an Advantage Actor-Critic worker with normalized advantages.
 
-    def __init__(self, 
-                 env: Env[np.array, int], 
-                 n_workers: int, 
+    Implements the core A2C logic including trajectory collection, advantage
+    calculation with shared normalization across workers, and gradient updates
+    for both actor and critic networks.
+
+    Attributes:
+        n_workers: Total number of parallel workers sharing the same networks.
+        policy_network: Neural network representing the actor (policy).
+        value_network: Neural network representing the critic (value function).
+    """
+
+    def __init__(self,
+                 env: Env[np.array, int],
+                 n_workers: int,
                  gamma: float = 0.99
                  ) -> None:
         """Initialize the Actor-Critic agent.
-        
+
         Args:
             env: Gymnasium environment with numpy array observations and integer actions.
+            n_workers: Total number of parallel workers sharing the same networks.
             gamma: Discount factor. Defaults to 0.99.
-        
+
         Attributes:
             policy_network: Neural network representing the actor (policy).
             value_network: Neural network representing the critic (value function).
@@ -34,19 +46,27 @@ class A2CWorker(Agent[np.array, int]):
         self.policy_network, self.value_network = self.make_networks()
 
     def make_networks(self) -> tuple[nn.Module, nn.Module]:
-        """
+        """Create and return the policy and value networks.
+
+        Returns:
+            A tuple containing:
+                - policy_network: Neural network for the actor (policy).
+                - value_network: Neural network for the critic (value function).
+
+        Raises:
+            NotImplementedError: Must be implemented by subclasses.
         """
 
         raise NotImplementedError
-    
+
     def action_explore(self, state: np.array) -> tuple[int, torch.tensor, torch.tensor]:
         """Sample an action from the policy with entropy information.
-        
+
         Used during training to enable both exploration and entropy regularization.
-        
+
         Args:
             state: NumPy array representing the current state.
-        
+
         Returns:
             A tuple containing:
                 - action: Integer action sampled from the policy.
@@ -60,15 +80,15 @@ class A2CWorker(Agent[np.array, int]):
         action = dist.sample()
         action_logprob = dist.log_prob(action)
         return action.item(), action_logprob, entropy
-    
+
     def action(self, state: np.array) -> int:
         """Select an action deterministically from the policy.
-        
+
         Used during testing/evaluation to get the best action without sampling.
-        
+
         Args:
             state: NumPy array representing the current state.
-        
+
         Returns:
             Integer action sampled from the policy distribution.
         """
@@ -78,17 +98,17 @@ class A2CWorker(Agent[np.array, int]):
             dist = Categorical(logits=logits)
             action = dist.sample()
             return action.item()
-        
+
     def unroll(self, state: np.array, t_max: int) -> tuple[list[np.array], list[torch.tensor], list[float], list[torch.tensor], float, bool]:
         """Collect a trajectory of length up to t_max steps.
-        
+
         Runs the policy for up to t_max steps or until a terminal state,
         collecting states, actions, rewards and policy information.
-        
+
         Args:
             state: Starting state.
             t_max: Maximum number of steps before truncating the episode.
-        
+
         Returns:
             A tuple containing:
                 - states: List of visited states.
@@ -116,22 +136,34 @@ class A2CWorker(Agent[np.array, int]):
             t += 1
 
         return states, actions_logprobs, rewards, entropies, R, done
-    
-    def calculate_advantages(self, 
+
+    def calculate_advantages(self,
                              shared_advantages: np.array,
                              index: int,
-                             states: list[np.array], 
+                             states: list[np.array],
                              rewards: list[float],
                              done: bool,
                              ) -> list[torch.tensor]:
-        """Calculate the advantages and store them in the shared array of advantages, 
-        the purpose being to calculate the mean and std of advantages.
-        Return the list of advantages in tensor form, this will be used later
-        to update the critic.
-        Return len(states)-2, the n-step length of bootstrapping, it will be used for
-        calculating the advantage mean and std.
+        """Calculate advantages and store them in the shared advantages array.
+
+        Computes n-step bootstrapped advantage estimates for each timestep in the
+        trajectory and writes them into the shared array so that all workers can
+        collectively compute a global mean and standard deviation for normalization.
+
+        Args:
+            shared_advantages: Shared array of shape (n_workers, t_max) used to
+                accumulate advantages across all workers.
+            index: Row index in shared_advantages corresponding to this worker.
+            states: List of states visited in the trajectory (length t+1).
+            rewards: List of rewards received at each step (length t).
+            done: Whether the episode terminated at the end of the trajectory.
+
+        Returns:
+            A tuple containing:
+                - advantages_list: List of per-timestep advantage tensors.
+                - n_steps: Number of bootstrapping steps (len(states) - 1).
         """
-        
+
         # Initialize the advantages list
         advantages_list = [0 for i in range(len(states)-1)]
         if done:
@@ -148,32 +180,34 @@ class A2CWorker(Agent[np.array, int]):
             advantages_list[t] = advantage
 
         return advantages_list, len(states)-1
-    
-    def backward(self, 
-                 states: list[np.array], 
-                 actions_logprobs: list[torch.tensor], 
-                 entropies: list[torch.tensor], 
+
+    def backward(self,
+                 states: list[np.array],
+                 actions_logprobs: list[torch.tensor],
+                 entropies: list[torch.tensor],
                  advantages: list[torch.tensor],
-                 advantage_mean, 
-                 advantage_std, 
-                 alpha_entropy: float, 
-                 optimizer_policy: optim, 
+                 advantage_mean,
+                 advantage_std,
+                 alpha_entropy: float,
+                 optimizer_policy: optim,
                  optimizer_value: optim
                  ) -> tuple[float, float, float, float]:
         """Update both policy and value networks using a collected trajectory.
-        
-        Computes advantage estimates and performs gradient updates for both networks.
-        
+
+        Normalizes advantages using the shared mean and standard deviation computed
+        across all workers, then computes and backpropagates policy and critic losses.
+
         Args:
             states: List of states visited in the trajectory.
             actions_logprobs: Log probabilities of sampled actions.
-            rewards: Rewards received at each step.
             entropies: Policy entropies at each step.
-            done: Whether the episode terminated or was truncated.
+            advantages: Per-timestep advantage tensors computed by calculate_advantages.
+            advantage_mean: Shared value holding the global advantage mean.
+            advantage_std: Shared value holding the global advantage standard deviation.
             alpha_entropy: Coefficient for entropy regularization term.
             optimizer_policy: Optimizer for policy network.
             optimizer_value: Optimizer for value network.
-        
+
         Returns:
             A tuple containing:
                 - loss_policy: Loss for policy gradient term.
@@ -205,17 +239,33 @@ class A2CWorker(Agent[np.array, int]):
         nn.utils.clip_grad_norm_(self.policy_network.parameters(), 1)
 
         return loss_policy.item(), loss_entropy.item(), loss_actor.item(), loss_critic.item()
-    
+
 
 def reset_shared_advantages(shared_advantages: np.array) -> None:
+    """Reset all entries of the shared advantages array to zero.
+
+    Args:
+        shared_advantages: Shared array of shape (n_workers, t_max) to be zeroed out.
+    """
+
     for i, j in itertools.product(
-        range(shared_advantages.shape[0]), 
+        range(shared_advantages.shape[0]),
         range(shared_advantages.shape[1])
         ):
         shared_advantages[i, j] = 0
-    
 
-def share_adam_optimizer(optimizer):
+
+def share_adam_optimizer(optimizer) -> None:
+    """Move Adam optimizer state tensors to shared memory.
+
+    Enables the optimizer state to be shared across processes by placing the
+    step counter, first moment, and second moment tensors in shared memory.
+
+    Args:
+        optimizer: An Adam optimizer instance whose state will be moved to
+            shared memory in-place.
+    """
+
     for group in optimizer.param_groups:
         for param in group["params"]:
             state = optimizer.state[param]
@@ -224,15 +274,15 @@ def share_adam_optimizer(optimizer):
             state["exp_avg_sq"] = torch.zeros_like(param).share_memory_()
 
 
-def train_a2c_worker(worker_id, 
-                     shared_advantages, 
-                     advantage_mean, 
+def train_a2c_worker(worker_id,
+                     shared_advantages,
+                     advantage_mean,
                      advantage_std,
                      n_advantages_total,
                      policy_network,
-                     value_network, 
-                     policy_optimizer, 
-                     value_optimizer, 
+                     value_network,
+                     policy_optimizer,
+                     value_optimizer,
                      env,
                      agent,
                      t_max,
@@ -241,10 +291,44 @@ def train_a2c_worker(worker_id,
                      thresh,
                      print_iter,
                      log_dir,
-                     barrier, 
-                     lock, 
+                     barrier,
+                     lock,
                      ) -> None:
-    
+    """Run the training loop for a single A2C worker process.
+
+    Each worker collects trajectories, updates the shared advantages array, waits
+    at a barrier for all workers to synchronize, then worker 0 computes the global
+    advantage mean and standard deviation before all workers perform gradient updates.
+    Training stops early if the rolling mean return exceeds thresh, or after
+    n_episodes episodes.
+
+    Args:
+        worker_id: Integer identifier for this worker process.
+        shared_advantages: Shared array of shape (n_workers, t_max) for accumulating
+            per-worker advantage estimates across a synchronization step.
+        advantage_mean: Shared value object holding the global advantage mean,
+            computed by worker 0 after each barrier synchronization.
+        advantage_std: Shared value object holding the global advantage standard
+            deviation, computed by worker 0 after each barrier synchronization.
+        n_advantages_total: Shared value object accumulating the total number of
+            advantage estimates across all workers within a synchronization step.
+        policy_network: Shared policy (actor) network used by the agent.
+        value_network: Shared value (critic) network used by the agent.
+        policy_optimizer: Shared optimizer for the policy network.
+        value_optimizer: Shared optimizer for the value network.
+        env: Gymnasium environment instance for this worker.
+        agent: A2CWorker instance that performs unroll, calculate_advantages, and backward.
+        t_max: Maximum number of steps per unroll before bootstrapping.
+        n_episodes: Maximum number of episodes to train for.
+        alpha_entropy: Coefficient for entropy regularization in the actor loss.
+        thresh: Rolling mean return threshold for early stopping.
+        print_iter: Frequency (in episodes) at which worker 0 prints training progress.
+        log_dir: Directory path for TensorBoard SummaryWriter logs.
+        barrier: Multiprocessing barrier used to synchronize workers before and after
+            advantage normalization.
+        lock: Multiprocessing lock used to safely update shared counters and optimizers.
+    """
+
     agent.policy_network = policy_network
     agent.value_network = value_network
     writer = SummaryWriter(log_dir=log_dir)
@@ -259,10 +343,10 @@ def train_a2c_worker(worker_id,
             states, actions_logprobs, rewards, entropies, R, done = agent.unroll(state, t_max)
             reward_episode += R
             advantages, n_advantages = agent.calculate_advantages(
-                shared_advantages, 
-                worker_id, 
-                states, 
-                rewards, 
+                shared_advantages,
+                worker_id,
+                states,
+                rewards,
                 done
             )
             # Update the total number of advantages gathered by the workers.
@@ -276,7 +360,7 @@ def train_a2c_worker(worker_id,
                     advantage_mean.value = 0
                     advantage_std.value = 0
                     for i, j in itertools.product(
-                            range(shared_advantages.shape[0]), 
+                            range(shared_advantages.shape[0]),
                             range(shared_advantages.shape[1]),
                         ):
                         advantage = shared_advantages[i, j]
@@ -284,7 +368,7 @@ def train_a2c_worker(worker_id,
 
                     advantage_mean.value /= n_advantages_total.value
                     for i, j in itertools.product(
-                            range(shared_advantages.shape[0]), 
+                            range(shared_advantages.shape[0]),
                             range(shared_advantages.shape[1]),
                         ):
                         advantage = shared_advantages[i, j]
@@ -301,16 +385,16 @@ def train_a2c_worker(worker_id,
             # Wait for worker 0 to finish calculating the advantage mean and std.
             barrier.wait()
             loss_policy, loss_entropy, loss_actor, loss_critic = agent.backward(
-                states, 
-                actions_logprobs, 
-                entropies, 
-                advantages, 
-                advantage_mean, 
+                states,
+                actions_logprobs,
+                entropies,
+                advantages,
+                advantage_mean,
                 advantage_std,
-                alpha_entropy, 
-                policy_optimizer, 
+                alpha_entropy,
+                policy_optimizer,
                 value_optimizer,
-            ) 
+            )
             state = states[-1]
             writer.add_scalar(f'worker_{worker_id}/loss_policy', loss_policy, it)
             writer.add_scalar(f'worker_{worker_id}/loss_entropy', loss_entropy, it)
@@ -337,9 +421,9 @@ def train_a2c_worker(worker_id,
                 print(f"\nWorker {worker_id} achieved early stopping achieved after {episode} episodes")
                 barrier.abort()     # Break the barrier because the worker finished
                 return
-            
+
         if episode%print_iter == 0 and reward_mean is not None and worker_id == 0:
             print('Worker : %d , episode : %d , return : %.3F' %(worker_id, episode, reward_mean))
-        
+
     print(f'\nWorker {worker_id} finished training without early stopping.')
     barrier.abort()     # Break the barrier because the worker finished

@@ -4,22 +4,18 @@ from gymnasium.core import Env
 
 
 class AstarCliffWalking(algs.Astar):
-    """
-    Astar agent for the cliff walking environment.
-    """
+    """Astar agent for the cliff walking environment."""
 
     def __init__(self, env: Env[int, int], gamma: float = 1.0):
-        """
-        Description
-        ------------------------------
-        Constructor.
+        """Initializes the AstarCliffWalking agent.
 
-        Parameters & Attributes
-        ------------------------------
-        env   : frozen lake gymnasium environment.
-        gamma : Float, discount factor.
-        shape : tuple, grid shape.
-        goals : Set of goal states.
+        Args:
+            env: Cliff walking gymnasium environment.
+            gamma: Discount factor.
+
+        Attributes:
+            shape: Grid shape of the environment.
+            goals: Set of goal states.
         """
 
         super().__init__(env, gamma)
@@ -27,37 +23,28 @@ class AstarCliffWalking(algs.Astar):
         self.goals = set([47])
 
     def heuristic(self, state: int) -> float:
-        """
-        Description
-        --------------
-        Return an upper bound on the optimal value at state.
+        """Returns an upper bound on the optimal value at state.
 
-        Arguments
-        --------------
-        state : Int, a state.
+        Args:
+            state: A state.
 
-        Returns
-        --------------
-        Float, the heuristic value of state.
+        Returns:
+            The heuristic value of state.
         """
 
         return 0.
-    
+
     def split(self, state: int, action: int) -> tuple[float, int]:
-        """
-        Description
-        --------------
-        Return the reward and next state induced by taking an action in a state.
+        """Returns the reward and next state induced by taking an action in a state.
 
-        Arguments
-        --------------
-        state  : Int, a state.
-        action : Int, an action.
+        Args:
+            state: A state.
+            action: An action.
 
-        Returns
-        --------------
-        Float, the induced reward.
-        Int, the corresponding next state.
+        Returns:
+            A tuple containing:
+                - reward: The induced reward.
+                - next_state: The corresponding next state.
         """
 
         state_index = np.unravel_index(state, self.shape)
@@ -72,7 +59,7 @@ class AstarCliffWalking(algs.Astar):
 
         elif action == 3: # Go left.
             next_state_index = (state_index[0], max(0, state_index[1] - 1))
-            
+
         # Going over the cliff sends us back immediately to the initial state and incurs a reward of -100.
         if next_state_index[0] == 3 and next_state_index[1] in set(range(1, 11)):
             reward, next_state = -100, 36
@@ -82,30 +69,23 @@ class AstarCliffWalking(algs.Astar):
             reward, next_state = -1, next_state_index[0]*self.shape[1] + next_state_index[1]
 
         return reward, next_state
-    
+
 
 class AstarFrozenLake(algs.Astar):
-    """
-    Astar agent for the frozen lake environment.
-    """
+    """Astar agent for the frozen lake environment."""
 
     def __init__(self, env: Env[int, int], gamma: float = 1.):
-        """
-        Description
-        ------------------------------
-        Constructor.
+        """Initializes the AstarFrozenLake agent.
 
-        Parameters & Attributes
-        ------------------------------
-        env   : frozen lake gymnasium environment.
-        gamma : Float, discount factor.
-        map   : np.array, the grid map of the environment.
-        shape : tuple, grid shape.
-        goals : Set of goal states.
-        holes : Set of holes, these are bad absorbing states.
+        Args:
+            env: Frozen lake gymnasium environment.
+            gamma: Discount factor.
 
-        Returns
-        ------------------------------
+        Attributes:
+            map: The grid map of the environment.
+            shape: Grid shape of the environment.
+            goals: Set of goal states.
+            holes: Set of holes, which are bad absorbing states.
         """
 
         super().__init__(env, gamma)
@@ -115,39 +95,30 @@ class AstarFrozenLake(algs.Astar):
         self.holes = set(np.arange(self.map.shape[0]*self.map.shape[1]).reshape((self.map.shape[0], self.map.shape[1]))[self.map == 'H'])
 
     def heuristic(self, state: int) -> float:
-        """
-        Description
-        --------------
-        Return an upper bound on the optimal value at state.
+        """Returns an upper bound on the optimal value at state.
 
-        Arguments
-        --------------
-        state : Int, a state.
+        Args:
+            state: A state.
 
-        Returns
-        --------------
-        Float, the heuristic value of state.
+        Returns:
+            The heuristic value of state.
         """
 
         if state in self.holes: return 0
         return 1
-        
+
 
     def split(self, state: int, action: int) -> tuple[int, float]:
-        """
-        Description
-        ------------------------------
-        Return the reward and next state induced by taking an action in a state.
+        """Returns the reward and next state induced by taking an action in a state.
 
-        Arguments
-        ------------------------------
-        state  : Int, a state.
-        action : Int, an action.
+        Args:
+            state: A state.
+            action: An action.
 
-        Returns
-        ------------------------------
-        Float, the induced reward.
-        Int, the corresponding next state.
+        Returns:
+            A tuple containing:
+                - reward: The induced reward.
+                - next_state: The corresponding next state.
         """
 
         # A hole is an absorbing state.
@@ -177,4 +148,3 @@ class AstarFrozenLake(algs.Astar):
 
         reward = 1 if next_state in self.goals else 0
         return reward, next_state
-

@@ -3,182 +3,125 @@ import torch.nn as nn
 from reinforcement_learning_course.deep_rl.reinforce_baseline.algorithms import ReinforceBaseline
 from reinforcement_learning_course.deep_rl.reinforce_baseline.examples.neural_networks import (
     LunarLanderPolicyNetwork, LunarLanderValueNetwork,
-    CartPolePolicyNetwork, CartPoleValueNetwork, 
-    MountainCarPolicyNetwork, MountainCarValueNetwork, 
+    CartPolePolicyNetwork, CartPoleValueNetwork,
+    MountainCarPolicyNetwork, MountainCarValueNetwork,
     AcrobotPolicyNetwork, AcrobotValueNetwork,
 )
 from gymnasium import Env
 
 
 class LunarLanderReinforceBaseline(ReinforceBaseline):
-    """
-    ReinforceBaseline LunarLander agent.
-    """
+    """ReinforceBaseline agent for the LunarLander environment."""
 
-    def __init__(self, 
-                 env: Env[np.array, int], 
+    def __init__(self,
+                 env: Env[np.array, int],
                  gamma: float = 0.99
                  ) -> None:
-        """
-        Description
-        ------------------------------
-        Constructor.
+        """Initializes the LunarLanderReinforceBaseline agent.
 
-        Parameters
-        ------------------------------
-        env      : gymnasium lunar lander environment.
-        gamma    : Float, discount factor.
-
-        Returns
-        ------------------------------
+        Args:
+            env: Gymnasium LunarLander environment.
+            gamma: Discount factor.
         """
         super().__init__(env, gamma)
 
     def make_networks(self) -> tuple[nn.Module, nn.Module]:
-        """
-        Description
-        ------------------------------
-        Initialize the policy network.
+        """Initializes the policy and value networks.
 
-        Parameters
-        ------------------------------
-
-        Returns
-        ------------------------------
-        policy_network : nn.Module, policy network.
-        value_network  : nn.Module, value network.
+        Returns:
+            A tuple containing:
+                - policy_network: The policy network.
+                - value_network: The value network.
         """
 
         policy_network = LunarLanderPolicyNetwork()
         value_network = LunarLanderValueNetwork()
         return policy_network, value_network
-        
+
 
 class CartPoleReinforceBaseline(ReinforceBaseline):
-    """
-    ReinforceBaseline CartPole agent.
-    """
+    """ReinforceBaseline agent for the CartPole environment."""
 
-    def __init__(self, 
-                 env: Env[np.array, int], 
+    def __init__(self,
+                 env: Env[np.array, int],
                  gamma: float = 0.99
                  ) -> None:
-        """
-        Description
-        ------------------------------
-        Constructor.
+        """Initializes the CartPoleReinforceBaseline agent.
 
-        Parameters
-        ------------------------------
-        env      : gymnasium cartpole environment.
-        gamma    : Float, discount factor.
-
-        Returns
-        ------------------------------
+        Args:
+            env: Gymnasium CartPole environment.
+            gamma: Discount factor.
         """
         super().__init__(env, gamma)
 
     def make_networks(self) -> tuple[nn.Module, nn.Module]:
-        """
-        Description
-        ------------------------------
-        Make the main and target networks.
+        """Initializes the policy and value networks.
 
-        Parameters
-        ------------------------------
-
-        Returns
-        ------------------------------
-        policy_network : nn.Module, policy network.
+        Returns:
+            A tuple containing:
+                - policy_network: The policy network.
+                - value_network: The value network.
         """
 
         policy_network = CartPolePolicyNetwork()
         value_network = CartPoleValueNetwork()
         return policy_network, value_network
-    
+
 
 class MountainCarReinforceBaseline(ReinforceBaseline):
-    """
-    ReinforceBaseline MountainCar agent.
-    """
+    """ReinforceBaseline agent for the MountainCar environment."""
 
-    def __init__(self, 
-                 env: Env[np.array, int], 
-                 gamma: float = 0.99, 
+    def __init__(self,
+                 env: Env[np.array, int],
+                 gamma: float = 0.99,
                  ) -> None:
-        """
-        Description
-        ------------------------------
-        Constructor.
+        """Initializes the MountainCarReinforceBaseline agent.
 
-        Parameters
-        ------------------------------
-        env      : gymnasium mountain-car environment.
-        gamma    : Float, discount factor.
-
-        Returns
-        ------------------------------
+        Args:
+            env: Gymnasium MountainCar environment.
+            gamma: Discount factor.
         """
         super().__init__(env, gamma)
 
     def make_networks(self) -> tuple[nn.Module, nn.Module]:
-        """
-        Description
-        ------------------------------
-        Make the main and target networks.
+        """Initializes the policy and value networks.
 
-        Parameters
-        ------------------------------
-
-        Returns
-        ------------------------------
-        policy_network : nn.Module, policy network.
+        Returns:
+            A tuple containing:
+                - policy_network: The policy network.
+                - value_network: The value network.
         """
 
         policy_network = MountainCarPolicyNetwork()
         value_network = MountainCarValueNetwork()
         return policy_network, value_network
-    
+
 
 class AcrobotReinforceBaseline(ReinforceBaseline):
-    """
-    ReinforceBaseline Acrobot agent.
-    """
+    """ReinforceBaseline agent for the Acrobot environment."""
 
-    def __init__(self, 
-                 env: Env[np.array, int], 
-                 gamma: float = 0.99, 
+    def __init__(self,
+                 env: Env[np.array, int],
+                 gamma: float = 0.99,
                  ) -> None:
-        """
-        Description
-        ------------------------------
-        Constructor.
+        """Initializes the AcrobotReinforceBaseline agent.
 
-        Parameters
-        ------------------------------
-        env      : gymnasium acrobot environment.
-        gamma    : Float, discount factor.
-
-        Returns
-        ------------------------------
+        Args:
+            env: Gymnasium Acrobot environment.
+            gamma: Discount factor.
         """
         super().__init__(env, gamma)
 
     def make_networks(self) -> tuple[nn.Module, nn.Module]:
-        """
-        Description
-        ------------------------------
-        Make the main and target networks.
+        """Initializes the policy and value networks.
 
-        Parameters
-        ------------------------------
-
-        Returns
-        ------------------------------
-        policy_netywork : nn.Module, policy network.
+        Returns:
+            A tuple containing:
+                - policy_netywork: The policy network.
+                - value_network: The value network.
         """
 
         policy_netywork = AcrobotPolicyNetwork()
         value_network = AcrobotValueNetwork()
         return policy_netywork, value_network
-    
+
