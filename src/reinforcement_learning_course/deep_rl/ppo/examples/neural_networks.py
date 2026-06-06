@@ -22,11 +22,11 @@ class LunarLanderPolicyNetwork(nn.Module):
         """
 
         super().__init__()
-        self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(8, 512)), 
+        self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(8, 64)), 
                                               ('relu1', nn.Tanh()), 
-                                              ('linear2', nn.Linear(512, 256)), 
+                                              ('linear2', nn.Linear(64, 64)), 
                                               ('relu2', nn.Tanh()), 
-                                              ('linear3', nn.Linear(256, 4))]))
+                                              ('linear3', nn.Linear(64, 4))]))
         
     def forward(self, x: torch.tensor) -> torch.tensor:
         """
@@ -65,11 +65,11 @@ class LunarLanderValueNetwork(nn.Module):
         """
 
         super().__init__()
-        self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(8, 512)), 
+        self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(8, 64)), 
                                               ('relu1', nn.Tanh()), 
-                                              ('linear2', nn.Linear(512, 256)), 
+                                              ('linear2', nn.Linear(64, 64)), 
                                               ('relu2', nn.Tanh()), 
-                                              ('linear3', nn.Linear(256, 1))]))
+                                              ('linear3', nn.Linear(64, 1))]))
         
     def forward(self, x: torch.tensor) -> torch.tensor:
         """
@@ -108,11 +108,11 @@ class CartPolePolicyNetwork(nn.Module):
         """
 
         super().__init__()
-        self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(4, 512)), 
+        self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(4, 64)), 
                                               ('relu1', nn.Tanh()), 
-                                              ('linear2', nn.Linear(512, 256)), 
+                                              ('linear2', nn.Linear(64, 64)), 
                                               ('relu2', nn.Tanh()), 
-                                              ('linear3', nn.Linear(256, 2))]))
+                                              ('linear3', nn.Linear(64, 2))]))
         
     def forward(self, x):
         """
@@ -151,11 +151,11 @@ class CartPoleValueNetwork(nn.Module):
         """
 
         super().__init__()
-        self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(4, 512)), 
+        self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(4, 64)), 
                                               ('relu1', nn.Tanh()), 
-                                              ('linear2', nn.Linear(512, 256)), 
+                                              ('linear2', nn.Linear(64, 64)), 
                                               ('relu2', nn.Tanh()), 
-                                              ('linear3', nn.Linear(256, 1))]))
+                                              ('linear3', nn.Linear(64, 1))]))
         
     def forward(self, x):
         """

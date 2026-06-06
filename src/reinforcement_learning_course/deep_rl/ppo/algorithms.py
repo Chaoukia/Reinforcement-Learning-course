@@ -62,11 +62,11 @@ class PPOWorker(Agent[np.array, int]):
         """
 
         with torch.no_grad():
-            logits = self.actor_network(torch.from_numpy(state))
+            logits = self.actor_network(torch.from_numpy(state).float())
             dist = Categorical(logits=logits)
             action = dist.sample()
-            action_prob = dist.probs[action]
-            return action.item(), action_prob.item()
+            action_logprob = dist.log_prob(action)
+            return action.item(), action_logprob.item()
     
     def action(self, state: np.array) -> int:
         """Select an action deterministically from the policy.
@@ -81,7 +81,7 @@ class PPOWorker(Agent[np.array, int]):
         """
 
         with torch.no_grad():
-            logits = self.actor_network(torch.from_numpy(state))
+            logits = self.actor_network(torch.from_numpy(state).float())
             dist = Categorical(logits=logits)
             action = dist.sample()
             return action.item()
@@ -116,15 +116,15 @@ class PPOWorker(Agent[np.array, int]):
                 - done: Whether the episode terminated.
         """
 
-        states, actions, actions_probs, rewards, dones = [state], [], [], [], []
+        states, actions, actions_logprobs, rewards, dones = [state], [], [], [], []
         t = 0
         while t < t_max:
-            action, action_prob = self.action_explore(state)
+            action, action_logprob = self.action_explore(state)
             next_state, reward, terminated, truncated, _ = self.env.step(action)
             done = (terminated or truncated)
             R += reward
             actions.append(action)
-            actions_probs.append(action_prob)
+            actions_logprobs.append(action_logprob)
             rewards.append(reward)
             dones.append(done)
             state = next_state if not done else env.reset()[0]
@@ -139,7 +139,7 @@ class PPOWorker(Agent[np.array, int]):
                 R = 0
                 episode += 1
 
-        return states, actions, actions_probs, rewards, dones, episode, R, reward_mean
+        return states, actions, actions_logprobs, rewards, dones, episode, R, reward_mean
     
     def calculate_advantages(
             self, 
@@ -147,7 +147,7 @@ class PPOWorker(Agent[np.array, int]):
             state_values: torch.tensor,
             rewards: list[float],
             dones: list[bool]    
-        ) -> list[torch.tensor]:
+        ) -> torch.tensor:
         """Calculate the advantages and store them in the shared array of advantages, 
         the purpose being to calculate the mean and std of advantages.
         Return the list of advantages in tensor form, this will be used later
@@ -158,7 +158,7 @@ class PPOWorker(Agent[np.array, int]):
         
         # Initialize the advantages list
         n_transitions = shared_advantages.shape[1]  # equal to t_max
-        advantages_list = [0 for i in range(n_transitions)]
+        advantages_tensor = torch.zeros((n_transitions, 1), dtype=torch.float32)
         advantage = 0
         # state_values.shape[0] = n _transitions+1, thus V_next_state is the value of the final state after all transitions.
         V_next_state = state_values[-1]
@@ -167,16 +167,16 @@ class PPOWorker(Agent[np.array, int]):
             td = rewards[t] + self.gamma*V_next_state*(1 - dones[t]) - V_state
             advantage = td + (self.gamma*self.lambd)*advantage*(1 - dones[t])
             shared_advantages[self.worker_id, t] = advantage.item()
-            advantages_list[t] = advantage
+            advantages_tensor[t, 0] = advantage
             V_next_state = V_state
 
-        return advantages_list
+        return advantages_tensor
     
     def backward(
             self, 
             states_batch: torch.tensor, 
             actions_batch: list[int],
-            actions_probs_old_batch: torch.tensor, 
+            actions_logprobs_old_batch: torch.tensor, 
             advantages_batch: torch.tensor,
             advantage_mean, 
             advantage_std, 
@@ -190,7 +190,7 @@ class PPOWorker(Agent[np.array, int]):
         
         Args:
             states: List of states visited in the trajectory.
-            actions_probs_old: Probabilities of the sampled actions according to the old policy.
+            actions_logprobs_old: Probabilities of the sampled actions according to the old policy.
             rewards: Rewards received at each step.
             entropies: Policy entropies at each step.
             done: Whether the episode terminated or was truncated.
@@ -206,22 +206,15 @@ class PPOWorker(Agent[np.array, int]):
                 - loss_critic: Loss for value function.
         """
 
-        batch_size = states_batch.shape[0]
-        # Take the softmax along dim=1 to transform logits into probabilities.
-        policy_probs = torch.softmax(self.actor_network(states_batch), dim=1)
-        # Action probabilities according to the current policy
-        actions_probs_batch = policy_probs[range(batch_size), actions_batch]
-        ratio = actions_probs_batch/actions_probs_old_batch
-        advantage_normalized_batch = (advantages_batch - advantage_mean.value)/(advantage_std.value + 1e-8)
+        logits = self.actor_network(states_batch)
+        dist = Categorical(logits=logits)
+        actions_logprobs_batch = dist.log_prob(torch.tensor(actions_batch))
+        ratio = torch.exp(actions_logprobs_batch - actions_logprobs_old_batch)
+        advantage_normalized_batch = ((advantages_batch - advantage_mean.value)/(advantage_std.value + 1e-8)).squeeze()
         loss_policy = -torch.minimum(
             ratio*advantage_normalized_batch, torch.clip(ratio, 1-self.epsilon, 1+self.epsilon)*advantage_normalized_batch
         ).mean()/self.n_workers
-        loss_entropy = 0
-        for i in range(batch_size):
-            dist = Categorical(logits=policy_probs[i, :])
-            loss_entropy -= dist.entropy()
-
-        loss_entropy /= batch_size*self.n_workers
+        loss_entropy = -dist.entropy().mean()/self.n_workers
         loss_actor = loss_policy + alpha_entropy*loss_entropy
         state_values = self.critic_network(states_batch)
         state_values_target = state_values_old_batch + advantages_batch
@@ -246,7 +239,7 @@ class PPOWorker(Agent[np.array, int]):
         path_actor = path / "actor.pt"
         path_critic = path / "critic.pt"
         torch.save(self.actor_network.state_dict(), path_actor)
-        torch.save(self.actor_network.state_dict(), path_critic)
+        torch.save(self.critic_network.state_dict(), path_critic)
 
     def load(self, path: str | Path) -> None:
         """Load network weights from disk.
@@ -345,11 +338,12 @@ def train_ppo_worker(
     reward_mean = None
     rewards_episodes = deque(maxlen=100)
     state, _ = env.reset()
+    learn_it = 0
     for it in range(n_train):
         try:
             # Synchronize all workers (same weights) before unrolling the policy
             barrier.wait()
-            states, actions, actions_probs_old, rewards, dones, episode, R, reward_mean = agent.unroll(
+            states, actions, actions_logprobs_old, rewards, dones, episode, R, reward_mean = agent.unroll(
                 env, 
                 state, 
                 t_max, 
@@ -372,8 +366,8 @@ def train_ppo_worker(
             return # Stop training because one worker finished early
         
         state = states[-1]
-        states = torch.from_numpy(np.array(states))
-        actions_probs_old = torch.from_numpy(np.array(actions_probs_old))
+        states = torch.from_numpy(np.array(states)).float()
+        actions_logprobs_old = torch.from_numpy(np.array(actions_logprobs_old)).float()
         with torch.no_grad():
             state_values_old = agent.critic_network(states)
 
@@ -383,7 +377,7 @@ def train_ppo_worker(
             rewards, 
             dones
         )
-        advantages = torch.tensor(advantages).unsqueeze(1)
+        # advantages = torch.tensor(advantages).unsqueeze(1)
         # All workers must finish calculating their advantages before worker 0 calculates their mean and std
         barrier.wait()
         if agent.worker_id == 0:
@@ -403,13 +397,13 @@ def train_ppo_worker(
                 indices_batch = indices[batch*batch_size : (batch+1)*batch_size]
                 states_batch = states[indices_batch]
                 actions_batch = [actions[index] for index in indices_batch]
-                actions_probs_old_batch = actions_probs_old[indices_batch]
+                actions_logprobs_old_batch = actions_logprobs_old[indices_batch]
                 advantages_batch = advantages[indices_batch]
                 state_values_old_batch = state_values_old[indices_batch]
                 loss_policy, loss_entropy, loss_actor, loss_critic = agent.backward(
                     states_batch, 
                     actions_batch,
-                    actions_probs_old_batch, 
+                    actions_logprobs_old_batch, 
                     advantages_batch, 
                     advantage_mean, 
                     advantage_std,
@@ -417,21 +411,23 @@ def train_ppo_worker(
                     alpha_entropy,
                     lock,
                 )
-                writer.add_scalar(f'worker_{agent.worker_id}/loss_policy', loss_policy, it)
-                writer.add_scalar(f'worker_{agent.worker_id}/loss_entropy', loss_entropy, it)
-                writer.add_scalar(f'worker_{agent.worker_id}/loss_actor', loss_actor, it)
-                writer.add_scalar(f'worker_{agent.worker_id}/loss_critic', loss_critic, it)
+                writer.add_scalar(f'worker_{agent.worker_id}/loss_policy', loss_policy, learn_it)
+                writer.add_scalar(f'worker_{agent.worker_id}/loss_entropy', loss_entropy, learn_it)
+                writer.add_scalar(f'worker_{agent.worker_id}/loss_actor', loss_actor, learn_it)
+                writer.add_scalar(f'worker_{agent.worker_id}/loss_critic', loss_critic, learn_it)
+                learn_it += 1
 
+                # Wait for all workers to do a backward pass before performing a gradient update.
+                barrier.wait()
+                if agent.worker_id == 0:
+                    torch.nn.utils.clip_grad_norm_(actor_network.parameters(), max_norm=0.5)
+                    torch.nn.utils.clip_grad_norm_(critic_network.parameters(), max_norm=0.5)
+                    policy_optimizer.step()
+                    value_optimizer.step()
+                    policy_optimizer.zero_grad()
+                    value_optimizer.zero_grad()
 
-            # Wait for all workers to do a backward pass before performing a gradient update.
-            barrier.wait()
-            if agent.worker_id == 0:
-                torch.nn.utils.clip_grad_norm_(actor_network.parameters(), max_norm=0.5)
-                torch.nn.utils.clip_grad_norm_(critic_network.parameters(), max_norm=0.5)
-                policy_optimizer.step()
-                value_optimizer.step()
-                policy_optimizer.zero_grad()
-                value_optimizer.zero_grad()
+                barrier.wait()
 
     print(f'\nWorker {agent.worker_id} finished training without early stopping.')
     barrier.abort()     # Break the barrier because the worker finished
