@@ -90,6 +90,16 @@ src/reinforcement_learning_course/
 
 ## Installation
 
+**Recommended — Poetry** (installs all dependencies including PyTorch with CUDA 12.1 support):
+
+```bash
+git clone https://github.com/Chaoukia/Reinforcement-Learning-course.git
+cd Reinforcement-Learning-course
+poetry install
+```
+
+Alternatively, using pip (PyTorch must be installed separately — see the [official instructions](https://pytorch.org/get-started/locally/)):
+
 ```bash
 git clone https://github.com/Chaoukia/Reinforcement-Learning-course.git
 cd Reinforcement-Learning-course
