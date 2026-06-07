@@ -202,7 +202,6 @@ class PPOWorker(Agent[np.array, int]):
         n_transitions = shared_advantages.shape[1]  # equal to t_max
         advantages_tensor = torch.zeros((n_transitions, 1), dtype=torch.float32)
         advantage = 0
-        # state_values.shape[0] = n _transitions+1, thus V_next_state is the value of the final state after all transitions.
         V_next_state = state_values[-1]
         for t in range(n_transitions-1, -1, -1):
             V_state = state_values[t]

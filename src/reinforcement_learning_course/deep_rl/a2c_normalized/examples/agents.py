@@ -12,21 +12,23 @@ from gymnasium import Env
 
 
 class LunarLanderA2C(A2CWorker):
-    """A2CWorker agent for the LunarLander environment."""
+    """A2CWorker LunarLander agent."""
 
     def __init__(self,
                  env: Env[np.array, int],
+                 worker_id: int,
                  n_workers: int,
                  gamma: float = 0.99
                  ) -> None:
         """Initializes the LunarLanderA2C agent.
 
         Args:
-            env: Gymnasium LunarLander environment.
-            n_workers: Number of parallel workers.
+            env: Gymnasium lunar lander environment.
+            worker_id: Identifier for this worker.
+            n_workers: Total number of workers.
             gamma: Discount factor.
         """
-        super().__init__(env, n_workers, gamma)
+        super().__init__(env, worker_id, n_workers, gamma)
 
     def make_networks(self) -> tuple[nn.Module, nn.Module]:
         """Initializes the policy and value networks.
@@ -43,21 +45,24 @@ class LunarLanderA2C(A2CWorker):
 
 
 class CartPoleA2C(A2CWorker):
-    """A2CWorker agent for the CartPole environment."""
+    """A2CWorker CartPole agent."""
 
     def __init__(self,
                  env: Env[np.array, int],
+                 worker_id: int,
                  n_workers: int,
                  gamma: float = 0.99
                  ) -> None:
         """Initializes the CartPoleA2C agent.
 
         Args:
-            env: Gymnasium CartPole environment.
-            n_workers: Number of parallel workers.
+            env: Gymnasium cartpole environment.
+            worker_id: Identifier for this worker.
+            n_workers: Total number of workers.
+            lambd: Lambda parameter for GAE.
             gamma: Discount factor.
         """
-        super().__init__(env, n_workers, gamma)
+        super().__init__(env, worker_id, n_workers, gamma)
 
     def make_networks(self) -> tuple[nn.Module, nn.Module]:
         """Initializes the policy and value networks.
@@ -74,21 +79,23 @@ class CartPoleA2C(A2CWorker):
 
 
 class MountainCarA2C(A2CWorker):
-    """A2CWorker agent for the MountainCar environment."""
+    """A2CWorker MountainCar agent."""
 
     def __init__(self,
                  env: Env[np.array, int],
+                 worker_id: int,
                  n_workers: int,
                  gamma: float = 0.99,
                  ) -> None:
         """Initializes the MountainCarA2C agent.
 
         Args:
-            env: Gymnasium MountainCar environment.
-            n_workers: Number of parallel workers.
+            env: Gymnasium mountain-car environment.
+            worker_id: Identifier for this worker.
+            n_workers: Total number of workers.
             gamma: Discount factor.
         """
-        super().__init__(env, n_workers, gamma)
+        super().__init__(env, worker_id, n_workers, gamma)
 
     def make_networks(self) -> tuple[nn.Module, nn.Module]:
         """Initializes the policy and value networks.
@@ -105,21 +112,23 @@ class MountainCarA2C(A2CWorker):
 
 
 class AcrobotA2C(A2CWorker):
-    """A2CWorker agent for the Acrobot environment."""
+    """A2CWorker Acrobot agent."""
 
     def __init__(self,
                  env: Env[np.array, int],
+                 worker_id: int,
                  n_workers: int,
                  gamma: float = 0.99,
                  ) -> None:
         """Initializes the AcrobotA2C agent.
 
         Args:
-            env: Gymnasium Acrobot environment.
-            n_workers: Number of parallel workers.
+            env: Gymnasium acrobot environment.
+            worker_id: Identifier for this worker.
+            n_workers: Total number of workers.
             gamma: Discount factor.
         """
-        super().__init__(env, n_workers, gamma)
+        super().__init__(env, worker_id, n_workers, gamma)
 
     def make_networks(self) -> tuple[nn.Module, nn.Module]:
         """Initializes the policy and value networks.
@@ -133,4 +142,3 @@ class AcrobotA2C(A2CWorker):
         policy_netywork = AcrobotPolicyNetwork()
         value_network = AcrobotValueNetwork()
         return policy_netywork, value_network
-
