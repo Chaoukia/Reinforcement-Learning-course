@@ -4,7 +4,7 @@ from collections import OrderedDict
 
 
 class LunarLanderNetwork(nn.Module):
-    """LunarLander Deep Q-Network."""
+    """LunarLander REINFORCE policy network."""
 
     def __init__(self) -> None:
         """Initializes LunarLanderNetwork with a multi-layer perceptron."""
@@ -22,13 +22,13 @@ class LunarLanderNetwork(nn.Module):
             x: Input state tensor.
 
         Returns:
-            Output q-values for the state.
+            Output action logits for the state.
         """
         return self.mlp(x)
 
 
 class CartPoleNetwork(nn.Module):
-    """CartPole Deep Q-Network."""
+    """CartPole REINFORCE policy network."""
 
     def __init__(self):
         """Initializes CartPoleNetwork with a multi-layer perceptron."""
@@ -46,13 +46,13 @@ class CartPoleNetwork(nn.Module):
             x: Input state tensor.
 
         Returns:
-            Output q-values for the state.
+            Output action logits for the state.
         """
         return self.mlp(x)
 
 
 class MountainCarNetwork(nn.Module):
-    """MountainCar Deep Q-Network."""
+    """MountainCar REINFORCE policy network."""
 
     def __init__(self):
         """Initializes MountainCarNetwork with a multi-layer perceptron."""
@@ -70,13 +70,13 @@ class MountainCarNetwork(nn.Module):
             x: Input state tensor.
 
         Returns:
-            Output q-values for the state.
+            Output action logits for the state.
         """
         return self.mlp(x)
 
 
 class AcrobotNetwork(nn.Module):
-    """Acrobot Deep Q-Network."""
+    """Acrobot REINFORCE policy network."""
 
     def __init__(self):
         """Initializes AcrobotNetwork with a multi-layer perceptron."""
@@ -94,6 +94,6 @@ class AcrobotNetwork(nn.Module):
             x: Input state tensor.
 
         Returns:
-            Output q-values for the state.
+            Output action logits for the state.
         """
         return self.mlp(x)

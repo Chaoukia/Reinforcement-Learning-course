@@ -58,7 +58,7 @@ class MonteCarlo(Agent[int, int]):
         
         Args:
             state: The current state.
-            epsilon: Exploration probability in (0, 1) - probability of taking a suboptimal action.
+            epsilon: Exploration probability in [0, 1] - probability of taking a random action.
         
         Returns:
             The action to perform.

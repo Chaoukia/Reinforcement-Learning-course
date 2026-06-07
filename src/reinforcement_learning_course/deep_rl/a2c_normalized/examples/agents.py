@@ -59,7 +59,6 @@ class CartPoleA2C(A2CWorker):
             env: Gymnasium cartpole environment.
             worker_id: Identifier for this worker.
             n_workers: Total number of workers.
-            lambd: Lambda parameter for GAE.
             gamma: Discount factor.
         """
         super().__init__(env, worker_id, n_workers, gamma)

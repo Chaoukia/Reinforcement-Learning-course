@@ -91,9 +91,9 @@ class PPOWorker(Agent[np.array, int]):
             return action.item(), action_logprob.item()
 
     def action(self, state: np.array) -> int:
-        """Select an action deterministically from the policy.
+        """Sample an action from the policy without returning the log probability.
 
-        Used during testing/evaluation to get the best action without sampling.
+        Used during testing/evaluation to get an action from the policy.
 
         Args:
             state: NumPy array representing the current state.

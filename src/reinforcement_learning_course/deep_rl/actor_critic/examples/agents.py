@@ -117,7 +117,7 @@ class AcrobotActorCritic(ActorCritic):
 
         Returns:
             A tuple containing:
-                - policy_netywork: The policy network.
+                - policy_network: The policy network.
                 - value_network: The value network.
         """
 

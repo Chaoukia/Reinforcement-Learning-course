@@ -320,13 +320,15 @@ class PolicyIteration(Agent[int, int]):
     def train(self, n: int = 1000, epsilon: float = 1e-12) -> None:
         """Train the agent using Policy Iteration.
         
-        Alternates between policy evaluation (computing values under current policy)
-        and policy improvement (updating policy to be greedy w.r.t. computed values)
-        until the policy stabilizes or maximum iterations reached.
-        
+        Alternates between policy evaluation (computing values under current policy
+        by solving the linear system exactly) and policy improvement (updating policy
+        to be greedy w.r.t. computed values) until convergence or maximum iterations
+        reached.
+
         Args:
             n: Maximum number of iterations. Defaults to 1000.
             epsilon: Convergence threshold - stops if value norm change is below this.
+              Also stops early if the policy does not change between iterations.
               Defaults to 1e-12.
         """
         

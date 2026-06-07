@@ -70,7 +70,7 @@ class ReinforceBaseline(Agent[np.array, int]):
             state: Current observation as numpy array.
         
         Returns:
-            Integer action sampled from policy (greedy without exploration noise).
+            Integer action sampled from policy distribution (no gradient tracking).
         """
 
         with torch.no_grad():
@@ -89,7 +89,7 @@ class ReinforceBaseline(Agent[np.array, int]):
             actions_logprobs: List of log probabilities for taken actions.
             rewards: List of immediate rewards received.
             entropies: List of policy entropies at each state.
-            reward_episode: Total discounted return for the episode.
+            reward_episode: Total undiscounted return for the episode.
         """
 
         state, _ = self.env.reset()
@@ -230,6 +230,9 @@ class ReinforceBaseline(Agent[np.array, int]):
         
         Args:
             path: Directory path containing saved network weights.
+
+        Raises:
+            ValueError: If path is not a directory.
         """
 
         if not os.path.isdir(str(path)):

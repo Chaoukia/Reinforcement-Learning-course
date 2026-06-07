@@ -87,9 +87,9 @@ class A2CWorker(Agent[np.array, int]):
         return action.item(), action_logprob, entropy
 
     def action(self, state: np.array) -> int:
-        """Select an action deterministically from the policy.
+        """Select an action by sampling from the policy (no gradient tracking).
 
-        Used during testing/evaluation to get the best action without sampling.
+        Used during testing/evaluation without computing gradients.
 
         Args:
             state: NumPy array representing the current state.
@@ -132,11 +132,11 @@ class A2CWorker(Agent[np.array, int]):
 
         Returns:
             A tuple containing:
-                - states: List of visited states (length t_max + 1).
-                - actions_logprobs: List of log probabilities of sampled actions (length t_max).
-                - entropies: List of policy entropies evaluated at each state (length t_max).
-                - rewards: List of rewards received (length t_max).
-                - dones: List of episode termination flags (length t_max).
+                - states: Numpy array of visited states, shape (t_max + 1, *state.shape).
+                - actions_logprobs: Torch tensor of log probabilities of sampled actions, shape (t_max,).
+                - entropies: Torch tensor of policy entropies at each step, shape (t_max,).
+                - rewards: Numpy array of rewards received, shape (t_max,).
+                - dones: Numpy array of episode termination flags, shape (t_max,).
                 - episode: Updated episode counter.
                 - R: Updated cumulative reward for the current episode.
                 - reward_mean: Updated running mean of episode returns.
@@ -190,8 +190,8 @@ class A2CWorker(Agent[np.array, int]):
                 used to accumulate advantages across all workers.
             state_values: Tensor of state values of shape (t_max + 1, 1)
                 produced by the critic network.
-            rewards: List of rewards received at each transition.
-            dones: List of episode termination flags for each transition.
+            rewards: Numpy array of rewards received at each transition, shape (t_max,).
+            dones: Numpy array of episode termination flags for each transition, shape (t_max,).
 
         Returns:
             Tensor of shape t_max containing the computed advantages.
@@ -226,15 +226,13 @@ class A2CWorker(Agent[np.array, int]):
         across all workers, then computes and backpropagates policy and critic losses.
 
         Args:
-            states: List of states visited in the trajectory.
-            actions_logprobs: Log probabilities of sampled actions.
-            entropies: Policy entropies at each step.
-            advantages: Per-timestep advantage tensors computed by calculate_advantages.
+            actions_logprobs_batch: Tensor of log probabilities of the sampled actions.
+            entropy_batch: Tensor of policy entropies at each step.
+            advantages_batch: Tensor of per-timestep advantages computed by calculate_advantages.
             advantage_mean: Shared value holding the global advantage mean.
             advantage_std: Shared value holding the global advantage standard deviation.
             alpha_entropy: Coefficient for entropy regularization term.
-            optimizer_policy: Optimizer for policy network.
-            optimizer_value: Optimizer for value network.
+            lock: Threading lock for serializing gradient accumulation across workers.
 
         Returns:
             A tuple containing:

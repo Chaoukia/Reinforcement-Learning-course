@@ -172,13 +172,19 @@ def cliff_walking_transition_matrices(env: Env[int, int]) -> tuple[np.array, np.
 def taxi_transition_matrices(env: Env[int, int]) -> tuple[np.array, np.array]:
     """Generate the probability and reward transition matrices for the taxi environment.
 
+    An extra absorbing state (index env.observation_space.n) is added beyond the
+    environment's native states to represent the terminal state reached after a
+    successful or unsuccessful drop-off action.
+
     Args:
         env: A taxi gymnasium environment.
 
     Returns:
         A tuple of two arrays:
-            - p_transition: np.array of shape (n_states, n_actions, n_states), the transition probabilities matrix.
-            - r_transition: np.array of shape (n_states, n_actions, n_states), the transition rewards matrix.
+            - p_transition: np.array of shape (n_states, n_actions, n_states), the transition probabilities matrix,
+              where n_states = env.observation_space.n + 1.
+            - r_transition: np.array of shape (n_states, n_actions, n_states), the transition rewards matrix,
+              where n_states = env.observation_space.n + 1.
     """
 
     n_states, n_actions = env.observation_space.n + 1, env.action_space.n

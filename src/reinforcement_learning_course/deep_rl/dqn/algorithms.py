@@ -35,6 +35,8 @@ class DQN(Agent[np.array, int]):
                 Defaults to False.
 
         Attributes:
+            max_size: Maximum capacity of the replay buffer.
+            double_learning: Whether Double Q-learning is enabled.
             q_network: Main Q-value network.
             q_network_target: Target network for stable learning.
             buffer: Experience replay buffer.

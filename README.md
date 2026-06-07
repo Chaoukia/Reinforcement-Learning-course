@@ -26,7 +26,7 @@ This project is designed as a hands-on introduction to Reinforcement Learning. I
 | **Monte Carlo** | First-visit and Every-visit Monte Carlo Control |
 | **Temporal Difference** | SARSA, Expected SARSA, Q-Learning, Double Q-Learning |
 | **Deep RL — Policy Gradient** | REINFORCE, REINFORCE with Baseline |
-| **Deep RL — Actor-Critic** | Actor-Critic (online), A2C (asynchronous, multi-worker), A2C with normalized advantages |
+| **Deep RL — Actor-Critic** | Actor-Critic (online), A2C with normalized advantages |
 | **Deep RL — Value-Based** | DQN, Double DQN |
 | **Deep RL — Clipped Surrogate** | PPO (multi-worker, with GAE and mini-batch updates) |
 
