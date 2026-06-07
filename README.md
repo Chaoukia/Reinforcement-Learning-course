@@ -41,6 +41,53 @@ Agents are trained and evaluated on standard [Gymnasium](https://gymnasium.faram
 
 ---
 
+## Repository structure
+
+Every algorithm family follows the same layout: a core `algorithms.py` with the implementation, and an `examples/` folder with environment-specific agent subclasses, network definitions, and one runnable training script per environment.
+
+```
+src/reinforcement_learning_course/
+├── core.py                          # Abstract Agent base class
+├── heuristics/
+│   ├── algorithms.py                # A* Search
+│   └── examples/
+├── dynamic_programming/
+│   ├── algorithms.py                # ValueIteration, QIteration, PolicyIteration
+│   └── examples/
+├── monte_carlo/
+│   ├── algorithms.py                # MonteCarlo (first-visit & every-visit)
+│   └── examples/
+├── temporal_difference/
+│   ├── algorithms.py                # SARSA, ExpectedSARSA, QLearning, DoubleQLearning
+│   └── examples/
+└── deep_rl/
+    ├── reinforce/
+    │   ├── algorithms.py            # Reinforce
+    │   └── examples/
+    ├── reinforce_baseline/
+    │   ├── algorithms.py            # ReinforceBaseline
+    │   └── examples/
+    ├── actor_critic/
+    │   ├── algorithms.py            # ActorCritic (online, single-worker)
+    │   └── examples/
+    ├── a2c_normalized/
+    │   ├── algorithms.py            # A2CWorker — multi-worker A2C with normalized advantages
+    │   └── examples/
+    ├── dqn/
+    │   ├── algorithms.py            # DQN, Double DQN
+    │   ├── utils.py                 # Experience replay buffer, epsilon schedule
+    │   └── examples/
+    └── ppo/
+        ├── algorithms.py            # PPOWorker — multi-worker PPO with GAE
+        └── examples/
+            ├── agents.py            # Environment-specific agent subclasses
+            ├── neural_networks.py   # Network architectures
+            ├── cartpole.py          # Runnable training + test script
+            └── lunar_lander.py
+```
+
+---
+
 ## Installation
 
 ```bash
