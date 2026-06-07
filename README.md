@@ -98,7 +98,14 @@ cd Reinforcement-Learning-course
 poetry install
 ```
 
-Alternatively, using pip (PyTorch must be installed separately — see the [official instructions](https://pytorch.org/get-started/locally/)):
+Then activate the environment:
+
+```bash
+$(poetry env activate)
+```
+
+
+Alternatively, using pip (installs the CPU-only build of PyTorch — for CUDA support, follow the [official instructions](https://pytorch.org/get-started/locally/) after installation):
 
 ```bash
 git clone https://github.com/Chaoukia/Reinforcement-Learning-course.git
