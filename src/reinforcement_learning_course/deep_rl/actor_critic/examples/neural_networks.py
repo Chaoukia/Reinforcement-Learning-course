@@ -74,11 +74,11 @@ class CartPolePolicyNetwork(nn.Module):
         """Initializes CartPolePolicyNetwork."""
 
         super().__init__()
-        self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(4, 512)),
-                                              ('relu1', nn.ReLU()),
-                                              ('linear2', nn.Linear(512, 256)),
-                                              ('relu2', nn.ReLU()),
-                                              ('linear3', nn.Linear(256, 2))]))
+        self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(4, 64)),
+                                              ('tanh1', nn.Tanh()),
+                                              ('linear2', nn.Linear(64, 64)),
+                                              ('tanh2', nn.Tanh()),
+                                              ('linear3', nn.Linear(64, 2))]))
 
     def forward(self, x):
         """Runs a forward pass through the policy network.
@@ -104,11 +104,11 @@ class CartPoleValueNetwork(nn.Module):
         """Initializes CartPoleValueNetwork."""
 
         super().__init__()
-        self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(4, 512)),
-                                              ('relu1', nn.ReLU()),
-                                              ('linear2', nn.Linear(512, 256)),
-                                              ('relu2', nn.ReLU()),
-                                              ('linear3', nn.Linear(256, 1))]))
+        self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(4, 64)),
+                                              ('tanh1', nn.Tanh()),
+                                              ('linear2', nn.Linear(64, 64)),
+                                              ('tanh2', nn.Tanh()),
+                                              ('linear3', nn.Linear(64, 1))]))
 
     def forward(self, x):
         """Runs a forward pass through the value network.

@@ -138,6 +138,7 @@ Trains a tabular Q-Learning agent on `Taxi-v3`. The `--algorithm` flag selects b
 ```bash
 python src/reinforcement_learning_course/temporal_difference/examples/taxi.py \
     --algorithm q_learning \
+    --alpha 0.1
     --n_train 100000 \
     --epsilon_start 1.0 \
     --epsilon_stop 0.1 \
@@ -154,7 +155,7 @@ Key arguments:
 | Argument | Default | Description |
 |---|---|---|
 | `--algorithm` | `q_learning` | TD algorithm: `sarsa`, `expected_sarsa`, `q_learning`, `double_q_learning` |
-| `--alpha` | — | Fixed learning rate (omit to use 1/n visit schedule) |
+| `--alpha` | 0.1 | Fixed learning rate (omit to use 1/n visit schedule) |
 | `--epsilon_start` | 1.0 | Initial exploration rate |
 | `--epsilon_stop` | 0.1 | Final exploration rate |
 | `--decay_rate` | 1e-4 | Exponential decay rate for epsilon |
@@ -163,7 +164,7 @@ Key arguments:
 
 ## More examples
 
-### Dynamic Programming — FrozenLake
+### Dynamic Programming (Policy Iteration) — FrozenLake
 
 ```bash
 python src/reinforcement_learning_course/dynamic_programming/examples/frozen_lake.py \
@@ -172,13 +173,13 @@ python src/reinforcement_learning_course/dynamic_programming/examples/frozen_lak
     --gamma 0.99
 ```
 
-### Monte Carlo — FrozenLake
+### Monte Carlo (Every visit) — FrozenLake
 
 ```bash
 python src/reinforcement_learning_course/monte_carlo/examples/frozen_lake.py \
     --map_name 4x4 \
-    --is_slippery no \
-    --first_visit yes \
+    --is_slippery yes \
+    --first_visit no \
     --n_train 100000 \
     --epsilon_start 1.0 \
     --epsilon_stop 0.1 \
@@ -192,26 +193,17 @@ python src/reinforcement_learning_course/heuristics/examples/frozen_lake.py \
     --map_name 4x4
 ```
 
-### REINFORCE — CartPole
-
-```bash
-python src/reinforcement_learning_course/deep_rl/reinforce/examples/cartpole.py \
-    --n_train 5000 \
-    --lr 1e-4 \
-    --alpha_entropy 0.01 \
-    --thresh 400
-```
-
-### Actor-Critic — LunarLander
+### Actor-Critic — CartPole
 
 ```bash
 python src/reinforcement_learning_course/deep_rl/actor_critic/examples/lunar_lander.py \
-    --n_train 5000 \
+    --n_train 10000 \
     --t_max 5 \
     --lr_policy 1e-4 \
     --lr_value 1e-4 \
-    --alpha_entropy 0.01 \
-    --thresh 250
+    --alpha_entropy 0.0 \
+    --thresh 400
+    --log_dir runs/actor_critic_cartpole
 ```
 
 ---

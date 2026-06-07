@@ -10,9 +10,9 @@ class LunarLanderNetwork(nn.Module):
         """Initializes LunarLanderNetwork with a multi-layer perceptron."""
         super().__init__()
         self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(8, 512)),
-                                              ('relu1', nn.ReLU()),
+                                              ('tanh1', nn.Tanh()),
                                               ('linear2', nn.Linear(512, 256)),
-                                              ('relu2', nn.ReLU()),
+                                              ('tanh2', nn.Tanh()),
                                               ('linear3', nn.Linear(256, 4))]))
 
     def forward(self, x: torch.tensor) -> torch.tensor:
@@ -33,11 +33,11 @@ class CartPoleNetwork(nn.Module):
     def __init__(self):
         """Initializes CartPoleNetwork with a multi-layer perceptron."""
         super().__init__()
-        self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(4, 512)),
-                                              ('relu1', nn.ReLU()),
-                                              ('linear2', nn.Linear(512, 256)),
-                                              ('relu2', nn.ReLU()),
-                                              ('linear3', nn.Linear(256, 2))]))
+        self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(4, 64)),
+                                              ('tanh1', nn.Tanh()),
+                                              ('linear2', nn.Linear(64, 64)),
+                                              ('tanh2', nn.Tanh()),
+                                              ('linear3', nn.Linear(64, 2))]))
 
     def forward(self, x):
         """Runs a forward propagation.
@@ -57,11 +57,11 @@ class MountainCarNetwork(nn.Module):
     def __init__(self):
         """Initializes MountainCarNetwork with a multi-layer perceptron."""
         super().__init__()
-        self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(2, 512)),
-                                              ('relu1', nn.ReLU()),
-                                              ('linear2', nn.Linear(512, 256)),
-                                              ('relu2', nn.ReLU()),
-                                              ('linear3', nn.Linear(256, 3))]))
+        self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(2, 64)),
+                                              ('tanh1', nn.Tanh()),
+                                              ('linear2', nn.Linear(64, 64)),
+                                              ('tanh2', nn.Tanh()),
+                                              ('linear3', nn.Linear(64, 3))]))
 
     def forward(self, x):
         """Runs a forward propagation.
@@ -81,11 +81,11 @@ class AcrobotNetwork(nn.Module):
     def __init__(self):
         """Initializes AcrobotNetwork with a multi-layer perceptron."""
         super().__init__()
-        self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(6, 512)),
-                                              ('relu1', nn.ReLU()),
-                                              ('linear2', nn.Linear(512, 256)),
-                                              ('relu2', nn.ReLU()),
-                                              ('linear3', nn.Linear(256, 3))]))
+        self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(6, 64)),
+                                              ('tanh1', nn.Tanh()),
+                                              ('linear2', nn.Linear(64, 64)),
+                                              ('tanh2', nn.Tanh()),
+                                              ('linear3', nn.Linear(64, 3))]))
 
     def forward(self, x):
         """Runs a forward propagation.

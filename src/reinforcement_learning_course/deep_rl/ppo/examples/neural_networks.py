@@ -16,9 +16,9 @@ class LunarLanderPolicyNetwork(nn.Module):
 
         super().__init__()
         self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(8, 64)),
-                                              ('relu1', nn.Tanh()),
+                                              ('tanh1', nn.Tanh()),
                                               ('linear2', nn.Linear(64, 64)),
-                                              ('relu2', nn.Tanh()),
+                                              ('tanh2', nn.Tanh()),
                                               ('linear3', nn.Linear(64, 4))]))
 
     def forward(self, x: torch.tensor) -> torch.tensor:
@@ -47,9 +47,9 @@ class LunarLanderValueNetwork(nn.Module):
 
         super().__init__()
         self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(8, 64)),
-                                              ('relu1', nn.Tanh()),
+                                              ('tanh1', nn.Tanh()),
                                               ('linear2', nn.Linear(64, 64)),
-                                              ('relu2', nn.Tanh()),
+                                              ('tanh2', nn.Tanh()),
                                               ('linear3', nn.Linear(64, 1))]))
 
     def forward(self, x: torch.tensor) -> torch.tensor:
@@ -78,9 +78,9 @@ class CartPolePolicyNetwork(nn.Module):
 
         super().__init__()
         self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(4, 64)),
-                                              ('relu1', nn.Tanh()),
+                                              ('tanh1', nn.Tanh()),
                                               ('linear2', nn.Linear(64, 64)),
-                                              ('relu2', nn.Tanh()),
+                                              ('tanh2', nn.Tanh()),
                                               ('linear3', nn.Linear(64, 2))]))
 
     def forward(self, x):
@@ -109,9 +109,9 @@ class CartPoleValueNetwork(nn.Module):
 
         super().__init__()
         self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(4, 64)),
-                                              ('relu1', nn.Tanh()),
+                                              ('tanh1', nn.Tanh()),
                                               ('linear2', nn.Linear(64, 64)),
-                                              ('relu2', nn.Tanh()),
+                                              ('tanh2', nn.Tanh()),
                                               ('linear3', nn.Linear(64, 1))]))
 
     def forward(self, x):
@@ -139,11 +139,11 @@ class MountainCarPolicyNetwork(nn.Module):
         """Initializes MountainCarPolicyNetwork."""
 
         super().__init__()
-        self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(2, 512)),
-                                              ('relu1', nn.Tanh()),
-                                              ('linear2', nn.Linear(512, 256)),
-                                              ('relu2', nn.Tanh()),
-                                              ('linear3', nn.Linear(256, 3))]))
+        self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(2, 64)),
+                                              ('tanh1', nn.Tanh()),
+                                              ('linear2', nn.Linear(64, 64)),
+                                              ('tanh2', nn.Tanh()),
+                                              ('linear3', nn.Linear(64, 3))]))
 
     def forward(self, x):
         """Runs a forward propagation through the policy network.
@@ -170,11 +170,11 @@ class MountainCarValueNetwork(nn.Module):
         """Initializes MountainCarValueNetwork."""
 
         super().__init__()
-        self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(2, 512)),
-                                              ('relu1', nn.Tanh()),
-                                              ('linear2', nn.Linear(512, 256)),
-                                              ('relu2', nn.Tanh()),
-                                              ('linear3', nn.Linear(256, 1))]))
+        self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(2, 64)),
+                                              ('tanh1', nn.Tanh()),
+                                              ('linear2', nn.Linear(64, 64)),
+                                              ('tanh2', nn.Tanh()),
+                                              ('linear3', nn.Linear(64, 1))]))
 
     def forward(self, x):
         """Runs a forward propagation through the value network.
@@ -201,11 +201,11 @@ class AcrobotPolicyNetwork(nn.Module):
         """Initializes AcrobotPolicyNetwork."""
 
         super().__init__()
-        self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(6, 512)),
-                                              ('relu1', nn.Tanh()),
-                                              ('linear2', nn.Linear(512, 256)),
-                                              ('relu2', nn.Tanh()),
-                                              ('linear3', nn.Linear(256, 3))]))
+        self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(6, 64)),
+                                              ('tanh1', nn.Tanh()),
+                                              ('linear2', nn.Linear(64, 64)),
+                                              ('tanh2', nn.Tanh()),
+                                              ('linear3', nn.Linear(64, 3))]))
 
     def forward(self, x):
         """Runs a forward propagation through the policy network.
@@ -232,11 +232,11 @@ class AcrobotValueNetwork(nn.Module):
         """Initializes AcrobotValueNetwork."""
 
         super().__init__()
-        self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(6, 512)),
-                                              ('relu1', nn.Tanh()),
-                                              ('linear2', nn.Linear(512, 256)),
-                                              ('relu2', nn.Tanh()),
-                                              ('linear3', nn.Linear(256, 1))]))
+        self.mlp = nn.Sequential(OrderedDict([('linear1', nn.Linear(6, 64)),
+                                              ('tanh1', nn.Tanh()),
+                                              ('linear2', nn.Linear(64, 64)),
+                                              ('tanh2', nn.Tanh()),
+                                              ('linear3', nn.Linear(64, 1))]))
 
     def forward(self, x):
         """Runs a forward propagation through the value network.
