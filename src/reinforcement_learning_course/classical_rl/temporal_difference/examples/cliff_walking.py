@@ -1,6 +1,6 @@
 import argparse
 import gymnasium as gym
-from reinforcement_learning_course.temporal_difference import algorithms as algs
+from reinforcement_learning_course.classical_rl.temporal_difference import algorithms as algs
 from time import time
 
 if __name__ == '__main__':
@@ -8,8 +8,7 @@ if __name__ == '__main__':
     argparser = argparse.ArgumentParser(description='Parse options')
 
     argparser.add_argument('--gamma', type=float, default=0.99, help="Discount factor of the MDP.")
-    argparser.add_argument('--map_name', type=str, choices=['4x4', '8x8'], default='4x4', help="Map grid, either 8x8 or 4x4.")
-    argparser.add_argument('--is_slippery', type=str, choices=['no', 'yes'], default='no', help="Whether the map is slippery or not.")
+    argparser.add_argument('--max_steps', type=int, default=100, help="Maximum number of steps per episode.")
     argparser.add_argument('--algorithm', type=str, choices=['sarsa', 'expected_sarsa', 'q_learning', 'double_q_learning'], 
                            default='q_learning', help="Temporal Difference algorithm to apply.")
     argparser.add_argument('--alpha', type=float, help="Initial value of epsilon.")
@@ -24,11 +23,10 @@ if __name__ == '__main__':
     
     args = argparser.parse_args()
 
-    is_slippery = args.is_slippery == 'yes'
     verbose = args.verbose == 'yes'
 
     # Train
-    env = gym.make('FrozenLake-v1', is_slippery=is_slippery, map_name=args.map_name)
+    env = gym.make('CliffWalking-v1', max_episode_steps=args.max_steps)
     start_time = time()
     if args.algorithm == 'sarsa':
         agent = algs.SARSA(env, args.gamma)
@@ -47,14 +45,14 @@ if __name__ == '__main__':
     print('Execution time :', time() - start_time)
     
     # Test.
-    env = gym.make('FrozenLake-v1', is_slippery=is_slippery, map_name=args.map_name, render_mode='human')
+    env = gym.make('CliffWalking-v1', max_episode_steps=args.max_steps, render_mode='human')
     agent.set_env(env)
     agent.test(args.n_test, verbose=args.verbose)
     env.close()
     
     # Save gif.
     if args.path_gif is not None:
-        env = gym.make('FrozenLake-v1', is_slippery=is_slippery, map_name=args.map_name, render_mode='rgb_array')
+        env = gym.make('CliffWalking-v1', max_episode_steps=args.max_steps, render_mode='rgb_array')
         agent.set_env(env)
         agent.save_gif(args.path_gif, n_episodes=1, duration=150)
         env.close()

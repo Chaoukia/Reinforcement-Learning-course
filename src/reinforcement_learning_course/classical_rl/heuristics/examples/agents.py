@@ -1,5 +1,5 @@
 import numpy as np
-import reinforcement_learning_course.heuristics.algorithms as algs
+import reinforcement_learning_course.classical_rl.heuristics.algorithms as algs
 from gymnasium.core import Env
 
 

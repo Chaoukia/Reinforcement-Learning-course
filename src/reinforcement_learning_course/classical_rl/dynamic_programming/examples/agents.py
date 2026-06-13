@@ -1,6 +1,6 @@
 import numpy as np
-import reinforcement_learning_course.dynamic_programming.algorithms as algs
-import reinforcement_learning_course.dynamic_programming.examples.utils as utils
+import reinforcement_learning_course.classical_rl.dynamic_programming.algorithms as algs
+import reinforcement_learning_course.classical_rl.dynamic_programming.examples.utils as utils
 from gymnasium.core import Env
 
 

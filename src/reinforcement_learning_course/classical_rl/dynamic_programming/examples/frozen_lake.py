@@ -1,6 +1,6 @@
 import argparse
 import gymnasium as gym
-from reinforcement_learning_course.dynamic_programming.examples import agents
+from reinforcement_learning_course.classical_rl.dynamic_programming.examples import agents
 from time import time
 
 if __name__ == '__main__':

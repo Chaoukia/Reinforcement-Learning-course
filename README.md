@@ -200,7 +200,7 @@ Key arguments:
 Trains a tabular Q-Learning agent on `Taxi-v3`. The `--algorithm` flag selects between `sarsa`, `expected_sarsa`, `q_learning`, and `double_q_learning`.
 
 ```bash
-python src/reinforcement_learning_course/temporal_difference/examples/taxi.py \
+python src/reinforcement_learning_course/classical_rl/temporal_difference/examples/taxi.py \
     --algorithm q_learning \
     --alpha 0.1
     --n_train 100000 \
@@ -231,7 +231,7 @@ Key arguments:
 ### Dynamic Programming (Policy Iteration) — FrozenLake
 
 ```bash
-python src/reinforcement_learning_course/dynamic_programming/examples/frozen_lake.py \
+python src/reinforcement_learning_course/classical_rl/dynamic_programming/examples/frozen_lake.py \
     --map_name 4x4 \
     --algorithm policy_iteration \
     --gamma 0.99
@@ -240,7 +240,7 @@ python src/reinforcement_learning_course/dynamic_programming/examples/frozen_lak
 ### Monte Carlo (Every visit) — FrozenLake
 
 ```bash
-python src/reinforcement_learning_course/monte_carlo/examples/frozen_lake.py \
+python src/reinforcement_learning_course/classical_rl/monte_carlo/examples/frozen_lake.py \
     --map_name 4x4 \
     --is_slippery yes \
     --first_visit no \
@@ -253,7 +253,7 @@ python src/reinforcement_learning_course/monte_carlo/examples/frozen_lake.py \
 ### A* Search — FrozenLake
 
 ```bash
-python src/reinforcement_learning_course/heuristics/examples/frozen_lake.py \
+python src/reinforcement_learning_course/classical_rl/heuristics/examples/frozen_lake.py \
     --map_name 4x4
 ```
 
